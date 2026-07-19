@@ -37,6 +37,8 @@ export function App() {
   const [rightPanelOpen, setRightPanelOpen] = useState(true);
   const [pendingConnection, setPendingConnection] = useState<string | null>(null);
   const pendingConnectionRef = useRef<string | null>(null);
+  const navCloseTimerRef = useRef<number | null>(null);
+  const headerMenuRef = useRef<HTMLDivElement>(null);
   const formRef = useRef<HTMLDivElement>(null);
   const labRef = useRef<HTMLDivElement>(null);
   const moduleContainerRef = useRef<HTMLDivElement>(null);
@@ -67,7 +69,23 @@ export function App() {
   const selectedProcess = store.processes.find((process) => process.id === store.selectedProcessId) ?? null;
   const progress = getProgress(store.entities, store.processes);
 
+  const cancelNavClose = () => {
+    if (navCloseTimerRef.current) {
+      window.clearTimeout(navCloseTimerRef.current);
+      navCloseTimerRef.current = null;
+    }
+  };
+
+  const scheduleNavClose = () => {
+    cancelNavClose();
+    navCloseTimerRef.current = window.setTimeout(() => {
+      setNavOpen(false);
+      navCloseTimerRef.current = null;
+    }, 1500);
+  };
+
   const goToSection = (target: "top" | "formation" | "transition" | "lab" | "results-title") => {
+    cancelNavClose();
     setNavOpen(false);
     if (target === "top") {
       window.history.replaceState(null, "", window.location.pathname);
@@ -78,6 +96,7 @@ export function App() {
   };
 
   const goToLabBlock = (view: LabView) => {
+    cancelNavClose();
     setLabView(view);
     setNavOpen(false);
     requestAnimationFrame(() => {
@@ -91,6 +110,28 @@ export function App() {
       moduleTitleRef.current?.focus({ preventScroll: true });
     });
   }, [labView]);
+
+  useEffect(() => () => cancelNavClose(), []);
+
+  useEffect(() => {
+    if (!navOpen) return;
+    const handlePointerMove = (event: PointerEvent) => {
+      const box = headerMenuRef.current?.getBoundingClientRect();
+      if (!box) return;
+      const inside = event.clientX >= box.left - 8 && event.clientX <= box.right + 8 && event.clientY >= box.top - 8 && event.clientY <= box.bottom + 8;
+      if (inside) cancelNavClose();
+      else scheduleNavClose();
+    };
+    const handleKeyDown = (event: KeyboardEvent) => {
+      if (event.key === "Escape") setNavOpen(false);
+    };
+    window.addEventListener("pointermove", handlePointerMove);
+    window.addEventListener("keydown", handleKeyDown);
+    return () => {
+      window.removeEventListener("pointermove", handlePointerMove);
+      window.removeEventListener("keydown", handleKeyDown);
+    };
+  }, [navOpen]);
 
   useEffect(() => {
     const element = metaplanRef.current;
@@ -276,9 +317,13 @@ export function App() {
           <button type="button" onClick={() => goToSection("formation")}>Consulta</button>
           <button type="button" onClick={() => goToSection("lab")}>Tratamiento</button>
         </nav>
-        <div className="header-menu">
-          <button className="menu-toggle" aria-label={navOpen ? "Cerrar menú" : "Abrir menú"} aria-expanded={navOpen} onClick={() => setNavOpen((value) => !value)}>
-            <Menu size={30} strokeWidth={2.7} />
+        <div ref={headerMenuRef} className="header-menu" onMouseEnter={cancelNavClose} onMouseLeave={scheduleNavClose} onFocus={cancelNavClose} onBlur={scheduleNavClose}>
+          <button className="menu-toggle" aria-label={navOpen ? "Cerrar menú" : "Abrir menú"} aria-expanded={navOpen} onClick={() => setNavOpen((value) => {
+            const next = !value;
+            if (next) cancelNavClose();
+            return next;
+          })}>
+            <Menu size={25} strokeWidth={2.8} />
           </button>
           {navOpen && (
             <div className="nav-drawer" role="menu" aria-label="Accesos rápidos">
