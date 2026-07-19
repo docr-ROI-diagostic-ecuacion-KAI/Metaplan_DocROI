@@ -1,6 +1,6 @@
 ﻿import { MouseEvent, PointerEvent as ReactPointerEvent, ReactNode, useEffect, useMemo, useRef, useState } from "react";
 import ReactFlow, { Background, ConnectionMode, Controls, EdgeLabelRenderer, EdgeProps, Handle, NodeProps, NodeResizer, PanOnScrollMode, Panel, Position, useReactFlow } from "reactflow";
-import { ArrowRight, CheckCircle2, ChevronDown, Download, Eye, FileSpreadsheet, Hand, Maximize, Menu, MousePointer2, MoreHorizontal, Plus, RotateCcw, RotateCw, Save, SquarePlus, Trash2 } from "lucide-react";
+import { ArrowRight, CheckCircle2, Download, Eye, FileSpreadsheet, Hand, Maximize, Menu, MousePointer2, Plus, RotateCcw, RotateCw, Save, SquarePlus, Trash2 } from "lucide-react";
 import { DndContext, DragEndEvent, useDraggable, useDroppable } from "@dnd-kit/core";
 import { CSS } from "@dnd-kit/utilities";
 import * as htmlToImage from "html-to-image";
@@ -28,7 +28,6 @@ export function App() {
   const [connectFrom, setConnectFrom] = useState<string | null>(null);
   const [relationDraft, setRelationDraft] = useState<RelationDraft | null>(null);
   const [toast, setToast] = useState("");
-  const [moreOpen, setMoreOpen] = useState(false);
   const [navOpen, setNavOpen] = useState(false);
   const [demoGuide, setDemoGuide] = useState(false);
   const [tool, setTool] = useState<CanvasTool>("select");
@@ -242,7 +241,7 @@ export function App() {
 
   const saveProject = () => {
     localStorage.setItem("docroi-ingenieria-visual-procesos", JSON.stringify(snapshotStore(store)));
-    setToast("Proyecto guardado en este equipo. También puedes exportarlo como JSON, Excel o PDF.");
+    setToast("Proyecto guardado en este equipo.");
   };
 
   const clearCanvas = () => {
@@ -394,21 +393,10 @@ export function App() {
             <div className="toolbar-row toolbar-context">
               <label className="project-field">Proyecto<input value={store.project.name} onChange={(event) => store.updateProject({ name: event.target.value })} /><small>Nombra el caso de trabajo como lo presentaría un CEO o un alumno de máster.</small></label>
               <button title="Guardar proyecto en este equipo" onClick={saveProject}><Save size={16} /> Guardar</button>
-              <button title="Guardar como PDF" onClick={() => window.print()}><Download size={16} /> PDF</button>
               <button className="ghost-danger" title="Limpiar lienzo" onClick={clearCanvas}><Trash2 size={16} /> Limpiar lienzo</button>
+              <button title="Nuevo lienzo limpio" onClick={clearCanvas}><SquarePlus size={16} /> Nuevo lienzo</button>
               <button title="Vista completa" onClick={() => flow.fitView({ padding: 0.18, duration: 220 })}><Maximize size={16} /> Vista completa</button>
               <button title="Mostrar u ocultar panel de configuración" onClick={() => setRightPanelOpen((value) => !value)}><Eye size={16} /> Panel</button>
-              <div className="more-menu">
-                <button title="Más acciones" onClick={() => setMoreOpen((value) => !value)}><MoreHorizontal size={16} /> Más <ChevronDown size={14} /></button>
-                {moreOpen && (
-                  <div>
-                    <button onClick={loadGuidedExample}>Ver ejemplo</button>
-                    <label className="file-button">Cargar proyecto<input type="file" accept="application/json" onChange={(event) => importJson(event.target.files?.[0] ?? null)} /></label>
-                    <button onClick={exportJson}>Exportar JSON</button>
-                    <button onClick={clearCanvas}>Nuevo lienzo limpio</button>
-                  </div>
-                )}
-              </div>
             </div>
             <div className="toolbar-row toolbar-tools">
               <div className="tool-group"><button title="Seleccionar" className={tool === "select" ? "active" : ""} onClick={() => setTool("select")}><MousePointer2 size={16} /> Seleccionar</button><button title="Mover lienzo" className={tool === "move" ? "active" : ""} onClick={() => setTool("move")}><Hand size={16} /> Mover</button></div>
