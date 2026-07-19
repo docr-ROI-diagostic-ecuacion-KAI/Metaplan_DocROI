@@ -494,7 +494,7 @@ export function App() {
               <div className="tool-group"><button title="Entidad" className={tool === "entity" ? "active" : ""} onClick={() => setTool("entity")}><SquarePlus size={16} /> Entidad</button><button title="Relación" className={tool === "relation" ? "active" : ""} onClick={() => setTool("relation")}><ArrowRight size={16} /> Relación</button></div>
               <div className="tool-group"><button title="Deshacer" onClick={store.undo}><RotateCcw size={16} /> Deshacer</button><button title="Rehacer" onClick={store.redo}><RotateCw size={16} /> Rehacer</button><button className="danger ghost-danger" title="Eliminar selección" disabled={!selectedEntity && !selectedProcess} onClick={() => selectedEntity ? store.removeEntity(selectedEntity.id) : selectedProcess && store.removeProcess(selectedProcess.id)}><Trash2 size={15} /> Eliminar</button>{selectedEntity && <button title="Duplicar entidad" onClick={() => store.duplicateEntity(selectedEntity.id)}>Duplicar</button>}</div>
               <div className="tool-group">{selectedEntity && <button title="Alinear" onClick={() => alignSelection("left")}>Alinear</button>}<button title="Distribuir" onClick={() => distributeEntities()}>Distribuir</button></div>
-              <div className="tool-group view-group"><label className="zoom-control">Zoom<input type="range" min="40" max="160" defaultValue="100" onChange={(event) => flow.zoomTo(Number(event.target.value) / 100)} /></label></div>
+              <div className="tool-group view-group"><label className="zoom-control">Zoom<input type="range" min="40" max="160" defaultValue="100" onChange={(event) => flow.zoomTo(Number(event.target.value) / 100)} /></label><button className="subtle-tool" title="Cargar ejemplo complejo" onClick={loadGuidedExample}>Ejemplo</button></div>
               {selectedProcess && <div className="tool-group contextual-group"><button title="Invertir dirección" onClick={() => store.updateProcess(selectedProcess.id, { sourceEntityId: selectedProcess.targetEntityId, targetEntityId: selectedProcess.sourceEntityId })}>Invertir</button></div>}
 
             </div>
@@ -528,7 +528,6 @@ export function App() {
                     <h2>Metaplan libre</h2>
                     <p>Pulsa <strong>Nueva entidad</strong> y haz clic donde quieras colocarla. Después arrastra desde un puerto para crear relaciones.</p>
                     <button className="dark-btn" onClick={() => setTool("entity")}>Nueva entidad</button>
-                    <button onClick={loadGuidedExample}>Cargar ejemplo complejo</button>
                   </div>
                 )}
                 <ReactFlow
