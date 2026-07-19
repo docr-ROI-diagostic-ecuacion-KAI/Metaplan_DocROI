@@ -1,6 +1,6 @@
 ﻿import { MouseEvent, PointerEvent as ReactPointerEvent, ReactNode, useEffect, useMemo, useRef, useState } from "react";
 import ReactFlow, { Background, ConnectionMode, Controls, EdgeLabelRenderer, EdgeProps, Handle, NodeProps, NodeResizer, PanOnScrollMode, Panel, Position, useReactFlow } from "reactflow";
-import { ArrowRight, CheckCircle2, Download, Eye, FileSpreadsheet, Hand, Maximize, Menu, MousePointer2, Plus, RotateCcw, RotateCw, Save, SquarePlus, Trash2 } from "lucide-react";
+import { ArrowRight, CheckCircle2, Download, Eye, FileSpreadsheet, Hand, Maximize, Menu, MousePointer2, Plus, Printer, RotateCcw, RotateCw, Save, Share2, SquarePlus, Trash2 } from "lucide-react";
 import { DndContext, DragEndEvent, useDraggable, useDroppable } from "@dnd-kit/core";
 import { CSS } from "@dnd-kit/utilities";
 import * as htmlToImage from "html-to-image";
@@ -43,6 +43,7 @@ export function App() {
   const moduleContainerRef = useRef<HTMLDivElement>(null);
   const moduleTitleRef = useRef<HTMLHeadingElement>(null);
   const metaplanRef = useRef<HTMLDivElement>(null);
+  const exportFrameRef = useRef<HTMLDivElement>(null);
   const mapRef = useRef<HTMLDivElement>(null);
 
   const openAcademicTab = (index: number) => {
@@ -288,6 +289,81 @@ export function App() {
     link.click();
   };
 
+  const createCanvasSheet = async () => {
+    if (!exportFrameRef.current) return null;
+    const canvasImage = await htmlToImage.toPng(exportFrameRef.current, {
+      cacheBust: true,
+      backgroundColor: "#ffffff",
+      pixelRatio: 2,
+      filter: (node) => !(node instanceof HTMLElement && node.classList.contains("canvas-export-actions"))
+    });
+    const sheet = document.createElement("div");
+    sheet.className = "export-sheet";
+    sheet.innerHTML = `
+      <header>
+        <img src="${logoUrl}" alt="DocROI" />
+        <strong>${escapeHtml(store.project.name || "Metaplan DocROI")}</strong>
+      </header>
+      <main>
+        <img src="${canvasImage}" alt="Metaplan exportado" />
+      </main>
+    `;
+    document.body.appendChild(sheet);
+    try {
+      return await htmlToImage.toPng(sheet, {
+        cacheBust: true,
+        backgroundColor: "#ffffff",
+        pixelRatio: 2,
+        width: 1600,
+        height: 1000
+      });
+    } finally {
+      sheet.remove();
+    }
+  };
+
+  const openPrintableCanvas = async (mode: "print" | "pdf") => {
+    const sheetImage = await createCanvasSheet();
+    if (!sheetImage) return;
+    const printWindow = window.open("", "_blank", "width=1200,height=820");
+    if (!printWindow) {
+      downloadDataUrl("docroi-metaplan-lamina.png", sheetImage);
+      setToast("No se pudo abrir la ventana de impresión. He descargado la imagen.");
+      return;
+    }
+    printWindow.document.write(`
+      <!doctype html>
+      <html>
+        <head>
+          <title>${mode === "pdf" ? "PDF" : "Imprimir"} · ${escapeHtml(store.project.name || "Metaplan DocROI")}</title>
+          <style>
+            @page { size: A4 landscape; margin: 8mm; }
+            * { box-sizing: border-box; }
+            body { margin: 0; background: #fff; }
+            img { display: block; width: 100%; height: auto; }
+          </style>
+        </head>
+        <body><img src="${sheetImage}" alt="Metaplan DocROI" /></body>
+      </html>
+    `);
+    printWindow.document.close();
+    printWindow.focus();
+    printWindow.onload = () => printWindow.print();
+  };
+
+  const shareCanvasImage = async () => {
+    const sheetImage = await createCanvasSheet();
+    if (!sheetImage) return;
+    const blob = await (await fetch(sheetImage)).blob();
+    const file = new File([blob], "docroi-metaplan.png", { type: "image/png" });
+    if (navigator.share && navigator.canShare?.({ files: [file] })) {
+      await navigator.share({ title: store.project.name, text: "Metaplan DocROI", files: [file] });
+      return;
+    }
+    downloadDataUrl("docroi-metaplan.png", sheetImage);
+    setToast("Imagen preparada para compartir.");
+  };
+
   const alignSelection = (mode: "left" | "top") => {
     const selected = store.entities.find((entity) => entity.id === store.selectedEntityId);
     if (!selected) return;
@@ -420,7 +496,7 @@ export function App() {
             <h2 ref={moduleTitleRef} tabIndex={-1} className="module-title">{labView === "metaplan" ? "Mapa operativo" : labView === "inventory" ? "Inventario de procesos" : labView === "chain" ? "Cadena de valor" : "Mapa de procesos"}</h2>
 
           {labView === "metaplan" && (
-            <div className={rightPanelOpen ? "free-workspace" : "free-workspace panel-hidden"}>
+            <div ref={exportFrameRef} className={rightPanelOpen ? "free-workspace" : "free-workspace panel-hidden"}>
               <div
                 className="canvas-wrap free-canvas"
                 ref={metaplanRef}
@@ -511,14 +587,10 @@ export function App() {
               </div>
               {!rightPanelOpen && <button className="reopen-panel" onClick={() => setRightPanelOpen(true)}>Mostrar configuración</button>}
               {rightPanelOpen && <RightLegendPanel selectedEntity={selectedEntity} selectedProcess={selectedProcess} setLabView={setLabView} onClose={() => setRightPanelOpen(false)} />}
-              <div className="bottom-bar">
-                <span>Zoom {Math.round(flow.getZoom() * 100)}%</span>
-                <span>{store.entities.length} entidades</span>
-                <span>{store.processes.length} relaciones</span>
-                <span>{selectedProcess ? `Selección: ${selectedProcess.visibleId ?? selectedProcess.displayOrder}` : selectedEntity ? `Selección: ${selectedEntity.name}` : "Sin selección"}</span>
-                <button onClick={() => setShowGrid((value) => !value)}>Cuadrícula {showGrid ? "activada" : "desactivada"}</button>
-                <button onClick={() => setSnapToGrid((value) => !value)}>Ajuste {snapToGrid ? "activado" : "desactivado"}</button>
-                <span>Guardado</span>
+              <div className="bottom-bar canvas-export-actions" aria-label="Salidas del Metaplan">
+                <button onClick={() => openPrintableCanvas("print")}><Printer size={16} /> Imprimir canvas</button>
+                <button onClick={() => openPrintableCanvas("pdf")}><Download size={16} /> PDF horizontal</button>
+                <button onClick={shareCanvasImage}><Share2 size={16} /> Compartir imagen</button>
               </div>
             </div>
           )}
@@ -1243,5 +1315,21 @@ function downloadFile(name: string, content: string, type: string) {
   link.download = name;
   link.click();
   URL.revokeObjectURL(url);
+}
+
+function downloadDataUrl(name: string, dataUrl: string) {
+  const link = document.createElement("a");
+  link.href = dataUrl;
+  link.download = name;
+  link.click();
+}
+
+function escapeHtml(value: string) {
+  return value
+    .replaceAll("&", "&amp;")
+    .replaceAll("<", "&lt;")
+    .replaceAll(">", "&gt;")
+    .replaceAll('"', "&quot;")
+    .replaceAll("'", "&#039;");
 }
 

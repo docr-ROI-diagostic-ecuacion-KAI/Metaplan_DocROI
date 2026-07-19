@@ -577,6 +577,74 @@ button.collapse-panel:focus-visible {
   font-size: 12px;
 }
 .bottom-bar button { padding: 4px 8px; font-size: 12px; }
+.canvas-export-actions {
+  justify-content: center;
+  padding: 14px;
+  background: #f7fbfd;
+}
+.canvas-export-actions button {
+  min-width: 190px;
+  min-height: 40px;
+  padding: 9px 14px;
+  border-radius: 999px;
+  background: #071a2b;
+  color: #fff;
+  border-color: #071a2b;
+  font-size: 13px;
+  font-weight: 850;
+  box-shadow: 0 12px 26px rgba(7,26,43,.12);
+}
+.canvas-export-actions button:hover {
+  background: #0a2942;
+  color: #fff;
+  border-color: #1f7eae;
+}
+.export-sheet {
+  position: fixed;
+  left: -10000px;
+  top: 0;
+  width: 1600px;
+  height: 1000px;
+  display: grid;
+  grid-template-rows: 92px minmax(0, 1fr);
+  background: #fff;
+  color: #071a2b;
+  overflow: hidden;
+}
+.export-sheet header {
+  display: flex;
+  align-items: center;
+  gap: 28px;
+  padding: 0 36px;
+  background: #02070d;
+  color: #fff;
+}
+.export-sheet header img {
+  width: 170px;
+  height: 54px;
+  object-fit: contain;
+  object-position: left center;
+}
+.export-sheet header strong {
+  min-width: 0;
+  font-size: 30px;
+  line-height: 1.1;
+  font-weight: 900;
+}
+.export-sheet main {
+  display: grid;
+  place-items: center;
+  padding: 30px;
+  background: #fff;
+}
+.export-sheet main > img {
+  max-width: 100%;
+  max-height: 100%;
+  width: auto;
+  height: auto;
+  border: 1px solid #d6e0e8;
+  box-shadow: 0 18px 48px rgba(7,26,43,.12);
+}
 .lab-shell.progressive { background: #f7fafc; }
 .workbar {
   display: grid;
