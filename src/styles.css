@@ -508,6 +508,12 @@ main { max-width: 1220px; margin: 0 auto; background: #fff; }
   border-color: #071a2b;
   box-shadow: 0 14px 34px rgba(7,26,43,.18);
 }
+.reopen-panel:hover,
+.reopen-panel:focus-visible {
+  background: #0a2942;
+  color: #fff;
+  border-color: #1f7eae;
+}
 .right-legend {
   position: relative;
   top: auto;
@@ -532,6 +538,12 @@ main { max-width: 1220px; margin: 0 auto; background: #fff; }
   color: #fff;
   border-color: #071a2b;
   box-shadow: 0 12px 26px rgba(7,26,43,.16);
+}
+.collapse-panel:hover,
+.collapse-panel:focus-visible {
+  background: #0a2942;
+  color: #fff;
+  border-color: #1f7eae;
 }
 .inspector {
   background: #fff;
