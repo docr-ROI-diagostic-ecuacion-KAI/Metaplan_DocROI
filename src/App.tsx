@@ -1,6 +1,6 @@
 ﻿import { MouseEvent, PointerEvent as ReactPointerEvent, ReactNode, useEffect, useMemo, useRef, useState } from "react";
 import ReactFlow, { Background, ConnectionMode, Controls, EdgeLabelRenderer, EdgeProps, Handle, NodeProps, NodeResizer, PanOnScrollMode, Panel, Position, useReactFlow } from "reactflow";
-import { ArrowRight, CheckCircle2, Download, Eye, FileSpreadsheet, Hand, Maximize, Menu, MousePointer2, Plus, Printer, RotateCcw, RotateCw, Save, Share2, SquarePlus, Trash2 } from "lucide-react";
+import { ArrowRight, CheckCircle2, Download, Eye, FileSpreadsheet, Hand, Lock, Maximize, Menu, MousePointer2, Plus, Printer, RotateCcw, RotateCw, Save, Share2, SquarePlus, Trash2, Unlock } from "lucide-react";
 import { DndContext, DragEndEvent, useDraggable, useDroppable } from "@dnd-kit/core";
 import { CSS } from "@dnd-kit/utilities";
 import * as htmlToImage from "html-to-image";
@@ -39,7 +39,8 @@ export function App() {
   const [tool, setTool] = useState<CanvasTool>("select");
   const [showGrid, setShowGrid] = useState(true);
   const [snapToGrid, setSnapToGrid] = useState(false);
-  const [rightPanelOpen, setRightPanelOpen] = useState(true);
+  const [rightPanelOpen, setRightPanelOpen] = useState(false);
+  const [inspectorAutoOpen, setInspectorAutoOpen] = useState(false);
   const [pendingConnection, setPendingConnection] = useState<string | null>(null);
   const pendingConnectionRef = useRef<string | null>(null);
   const navCloseTimerRef = useRef<number | null>(null);
@@ -64,10 +65,13 @@ export function App() {
   }, []);
 
   useEffect(() => {
-    const openInspector = () => setRightPanelOpen(true);
+    const openInspector = (event: Event) => {
+      const detail = (event as CustomEvent<{ force?: boolean }>).detail;
+      if (detail?.force || inspectorAutoOpen) setRightPanelOpen(true);
+    };
     window.addEventListener("docroi:open-inspector", openInspector);
     return () => window.removeEventListener("docroi:open-inspector", openInspector);
-  }, []);
+  }, [inspectorAutoOpen]);
 
   const nodes = useMemo(() => toFlowNodes(store.entities, store.selectedEntityId), [store.entities, store.selectedEntityId, store.processes]);
   const edges = useMemo(() => toFlowEdges(store.processes, store.selectedProcessId), [store.processes, store.selectedProcessId]);
@@ -214,7 +218,7 @@ export function App() {
       setConnectFrom(null);
       return;
     }
-    setRightPanelOpen(true);
+    if (inspectorAutoOpen) setRightPanelOpen(true);
     store.selectEntity(nodeId);
   };
 
@@ -479,6 +483,13 @@ export function App() {
               <button title="Nuevo lienzo limpio" onClick={clearCanvas}><SquarePlus size={16} /> Nuevo lienzo</button>
               <button title="Vista completa" onClick={() => flow.fitView({ padding: 0.18, duration: 220 })}><Maximize size={16} /> Vista completa</button>
               <button title="Mostrar u ocultar panel de configuración" onClick={() => setRightPanelOpen((value) => !value)}><Eye size={16} /> Panel</button>
+              <button
+                className={!inspectorAutoOpen ? "active" : ""}
+                title={inspectorAutoOpen ? "El panel se abre al seleccionar elementos" : "El panel queda fijo hasta doble clic o botón de edición"}
+                onClick={() => setInspectorAutoOpen((value) => !value)}
+              >
+                {inspectorAutoOpen ? <Unlock size={16} /> : <Lock size={16} />} Panel fijo
+              </button>
             </div>
             <div className="toolbar-row toolbar-tools">
               <div className="tool-group"><button title="Seleccionar" className={tool === "select" ? "active" : ""} onClick={() => setTool("select")}><MousePointer2 size={16} /> Seleccionar</button><button title="Mover lienzo" className={tool === "move" ? "active" : ""} onClick={() => setTool("move")}><Hand size={16} /> Mover</button></div>
@@ -544,8 +555,8 @@ export function App() {
                     setPendingConnection(null);
                   }}
                   onNodeClick={(_, node) => handleNodeClick(node.id)}
-                  onNodeDoubleClick={(_, node) => handleNodeClick(node.id)}
-                  onEdgeClick={(_, edge) => { setRightPanelOpen(true); store.selectProcess(edge.id); }}
+                  onNodeDoubleClick={(_, node) => { setRightPanelOpen(true); store.selectEntity(node.id); }}
+                  onEdgeClick={(_, edge) => { if (inspectorAutoOpen) setRightPanelOpen(true); store.selectProcess(edge.id); }}
                   onEdgeDoubleClick={(_, edge) => { setRightPanelOpen(true); store.selectProcess(edge.id); }}
                   onPaneClick={(event: MouseEvent) => {
                     if (tool !== "entity") return;
@@ -553,7 +564,7 @@ export function App() {
                     store.addEntity(point);
                     setTimeout(() => {
                       const created = useAppStore.getState().entities.at(-1);
-                      if (created) store.updateEntity(created.id, { name: "Nueva entidad", type: "Otra", size: { width: 220, height: 120 } });
+                      if (created) store.updateEntity(created.id, { name: "Nueva entidad", type: "Otra", size: { width: 170, height: 82 } });
                     }, 0);
                     setTool("select");
                   }}
@@ -696,14 +707,13 @@ function EntityNode({ data, selected }: NodeProps<{ entity: Entity; inputs: numb
   const flow = useReactFlow();
   const dragStartRef = useRef<{ pointerId: number; x: number; y: number; position: Entity["position"] } | null>(null);
   const mouseDragRef = useRef<{ x: number; y: number; position: Entity["position"] } | null>(null);
-  const openInspector = () => window.dispatchEvent(new CustomEvent("docroi:open-inspector"));
+  const openInspector = (force = false) => window.dispatchEvent(new CustomEvent("docroi:open-inspector", { detail: { force } }));
 
   const startManualDrag = (event: ReactPointerEvent<HTMLDivElement>) => {
     const target = event.target as HTMLElement;
     if (entity.locked || target.closest(".entity-handle") || target.closest(".react-flow__resize-control")) return;
     event.preventDefault();
     event.stopPropagation();
-    openInspector();
     store.selectEntity(entity.id);
     dragStartRef.current = { pointerId: event.pointerId, x: event.clientX, y: event.clientY, position: entity.position };
     target.setPointerCapture?.(event.pointerId);
@@ -734,7 +744,6 @@ function EntityNode({ data, selected }: NodeProps<{ entity: Entity; inputs: numb
     if (entity.locked || target.closest(".entity-handle") || target.closest(".react-flow__resize-control")) return;
     event.preventDefault();
     event.stopPropagation();
-    openInspector();
     store.selectEntity(entity.id);
     mouseDragRef.current = { x: event.clientX, y: event.clientY, position: entity.position };
 
@@ -768,7 +777,7 @@ function EntityNode({ data, selected }: NodeProps<{ entity: Entity; inputs: numb
       onPointerCancel={endManualDrag}
       onDoubleClick={(event) => {
         event.stopPropagation();
-        openInspector();
+        openInspector(true);
         store.selectEntity(entity.id);
       }}
     >
@@ -780,7 +789,7 @@ function EntityNode({ data, selected }: NodeProps<{ entity: Entity; inputs: numb
         onMouseDown={(event) => event.stopPropagation()}
         onClick={(event) => {
           event.stopPropagation();
-          openInspector();
+          openInspector(true);
           store.selectEntity(entity.id);
         }}
       >
@@ -788,8 +797,8 @@ function EntityNode({ data, selected }: NodeProps<{ entity: Entity; inputs: numb
       </button>
       <NodeResizer
         isVisible={selected}
-        minWidth={150}
-        minHeight={70}
+        minWidth={115}
+        minHeight={58}
         color="#1f7eae"
         handleClassName="entity-resize-handle"
         lineClassName="entity-resize-line"

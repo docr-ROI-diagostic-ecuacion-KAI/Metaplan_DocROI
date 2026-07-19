@@ -144,7 +144,7 @@ export const useAppStore = create<AppStore>((set) => ({
         isPrimary,
         shape: "rounded-rectangle",
         position,
-        size: { width: 220, height: 110 },
+        size: { width: 170, height: 82 },
         showDescription: true,
         locked: false,
         tags: []
@@ -293,14 +293,14 @@ export const toFlowNodes = (entities: Entity[], selectedEntityId: string | null)
     draggable: !entity.locked,
     data: {
       entity,
-      width: entity.size?.width ?? 220,
-      height: entity.size?.height ?? 110,
+      width: entity.size?.width ?? 170,
+      height: entity.size?.height ?? 82,
       inputs: useAppStore.getState().processes.filter((process) => process.targetEntityId === entity.id).length,
       outputs: useAppStore.getState().processes.filter((process) => process.sourceEntityId === entity.id).length
     },
     style: {
-      width: entity.size?.width ?? 220,
-      height: entity.size?.height ?? 110
+      width: entity.size?.width ?? 170,
+      height: entity.size?.height ?? 82
     },
     className: [
       "entity-node",
@@ -315,12 +315,12 @@ export const toFlowEdges = (processes: Process[], selectedProcessId: string | nu
     const sourceEntity = entities.find((entity) => entity.id === process.sourceEntityId);
     const targetEntity = entities.find((entity) => entity.id === process.targetEntityId);
     const sourceCenter = {
-      x: (sourceEntity?.position.x ?? 0) + (sourceEntity?.size?.width ?? 220) / 2,
-      y: (sourceEntity?.position.y ?? 0) + (sourceEntity?.size?.height ?? 110) / 2
+      x: (sourceEntity?.position.x ?? 0) + (sourceEntity?.size?.width ?? 170) / 2,
+      y: (sourceEntity?.position.y ?? 0) + (sourceEntity?.size?.height ?? 82) / 2
     };
     const targetCenter = {
-      x: (targetEntity?.position.x ?? 0) + (targetEntity?.size?.width ?? 220) / 2,
-      y: (targetEntity?.position.y ?? 0) + (targetEntity?.size?.height ?? 110) / 2
+      x: (targetEntity?.position.x ?? 0) + (targetEntity?.size?.width ?? 170) / 2,
+      y: (targetEntity?.position.y ?? 0) + (targetEntity?.size?.height ?? 82) / 2
     };
     const dx = targetCenter.x - sourceCenter.x;
     const dy = targetCenter.y - sourceCenter.y;

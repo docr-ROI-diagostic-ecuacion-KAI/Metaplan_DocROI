@@ -837,14 +837,14 @@ button.collapse-panel:focus-visible {
   position: relative;
   width: 100%;
   height: 100%;
-  min-width: 150px;
-  min-height: 70px;
+  min-width: 115px;
+  min-height: 58px;
   background: #fff;
   border: 2px solid #3f3f3f;
-  border-radius: 28px;
+  border-radius: 22px;
   box-shadow: none;
   color: var(--color-ink);
-  padding: 18px;
+  padding: 10px 12px;
   overflow: hidden;
   user-select: none;
 }
@@ -878,12 +878,12 @@ button.collapse-panel:focus-visible {
   transform: scale(1.08);
   background: #e8f6fb;
 }
-.entity-main { display: grid; gap: 3px; text-align: center; }
-.entity-main strong { font-size: 28px; font-weight: 500; letter-spacing: 0; }
-.entity-main span, .entity-counts small { color: #607789; font-size: 11px; }
+.entity-main { display: grid; gap: 2px; text-align: center; }
+.entity-main strong { font-size: 20px; font-weight: 600; letter-spacing: 0; line-height: 1.05; }
+.entity-main span, .entity-counts small { color: #607789; font-size: 10px; }
 .entity-main em { width: fit-content; justify-self: center; border-radius: 999px; background: var(--color-cyan-100); color: #064967; padding: 2px 8px; font-style: normal; font-size: 10px; font-weight: 900; }
-.entity-notes { margin: 16px 0 0; padding-left: 18px; font-size: 13px; font-style: italic; color: #111; line-height: 1.38; text-align: left; }
-.entity-counts { display: flex; justify-content: space-between; border-top: 1px solid #edf2f6; margin-top: 9px; padding-top: 7px; }
+.entity-notes { margin: 8px 0 0; padding-left: 14px; font-size: 11px; font-style: italic; color: #111; line-height: 1.22; text-align: left; }
+.entity-counts { display: flex; justify-content: space-between; border-top: 1px solid #edf2f6; margin-top: 6px; padding-top: 5px; }
 .entity-handle { width: 14px; height: 14px; border: 2px solid #fff; background: #002b3d; opacity: 0; transition: opacity 140ms ease, transform 140ms ease; }
 .react-flow__node:hover .entity-handle,
 .react-flow__node.selected .entity-handle { opacity: 1; }
