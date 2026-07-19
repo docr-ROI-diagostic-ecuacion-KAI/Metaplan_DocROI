@@ -1,6 +1,6 @@
 ﻿import { MouseEvent, PointerEvent as ReactPointerEvent, ReactNode, useEffect, useMemo, useRef, useState } from "react";
 import ReactFlow, { Background, ConnectionMode, Controls, EdgeLabelRenderer, EdgeProps, Handle, NodeProps, NodeResizer, PanOnScrollMode, Panel, Position, useReactFlow } from "reactflow";
-import { ArrowRight, CheckCircle2, Download, Eye, FileSpreadsheet, Hand, Lock, Maximize, Menu, MousePointer2, Plus, Printer, RotateCcw, RotateCw, Save, Share2, SquarePlus, Trash2, Unlock } from "lucide-react";
+import { ArrowRight, CheckCircle2, Download, Eye, FileSpreadsheet, Lock, Maximize, Menu, Plus, Printer, RotateCcw, RotateCw, Save, Share2, SquarePlus, Trash2, Unlock } from "lucide-react";
 import * as htmlToImage from "html-to-image";
 import * as XLSX from "xlsx";
 import { academicTabs } from "./data";
@@ -490,8 +490,7 @@ export function App() {
               </button>
             </div>
             <div className="toolbar-row toolbar-tools">
-              <div className="tool-group"><button title="Seleccionar" className={tool === "select" ? "active" : ""} onClick={() => setTool("select")}><MousePointer2 size={16} /> Seleccionar</button><button title="Mover lienzo" className={tool === "move" ? "active" : ""} onClick={() => setTool("move")}><Hand size={16} /> Mover</button></div>
-              <div className="tool-group"><button title="Entidad" className={tool === "entity" ? "active" : ""} onClick={() => setTool("entity")}><SquarePlus size={16} /> Entidad</button><button title="Relación" className={tool === "relation" ? "active" : ""} onClick={() => setTool("relation")}><ArrowRight size={16} /> Relación</button></div>
+              <div className="tool-group"><button title="Entidad" className={tool === "entity" ? "active" : ""} onClick={() => setTool((current) => current === "entity" ? "select" : "entity")}><SquarePlus size={16} /> Entidad</button><button title="Relación" className={tool === "relation" ? "active" : ""} onClick={() => setTool((current) => current === "relation" ? "select" : "relation")}><ArrowRight size={16} /> Relación</button></div>
               <div className="tool-group"><button title="Deshacer" onClick={store.undo}><RotateCcw size={16} /> Deshacer</button><button title="Rehacer" onClick={store.redo}><RotateCw size={16} /> Rehacer</button><button className="danger ghost-danger" title="Eliminar selección" disabled={!selectedEntity && !selectedProcess} onClick={() => selectedEntity ? store.removeEntity(selectedEntity.id) : selectedProcess && store.removeProcess(selectedProcess.id)}><Trash2 size={15} /> Eliminar</button>{selectedEntity && <button title="Duplicar entidad" onClick={() => store.duplicateEntity(selectedEntity.id)}>Duplicar</button>}</div>
               <div className="tool-group">{selectedEntity && <button title="Alinear" onClick={() => alignSelection("left")}>Alinear</button>}<button title="Distribuir" onClick={() => distributeEntities()}>Distribuir</button></div>
               <div className="tool-group view-group"><label className="zoom-control">Zoom<input type="range" min="40" max="160" defaultValue="100" onChange={(event) => flow.zoomTo(Number(event.target.value) / 100)} /></label><button className="subtle-tool" title="Cargar ejemplo complejo" onClick={loadGuidedExample}>Ejemplo</button></div>
