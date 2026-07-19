@@ -13,7 +13,7 @@ export const createEmptyProject = (): AppStateData => ({
     id: uid(),
     name: "Ingeniería Visual de Procesos",
     organization: "Doc ROI",
-    description: "Mapa operativo basado en entidades, relaciones y procesos descubiertos.",
+    description: "MetaPlan basado en entidades, relaciones y procesos descubiertos.",
     createdAt: now(),
     updatedAt: now()
   },
@@ -85,7 +85,7 @@ export const demoProject = (): AppStateData => {
 
 export const academicTabs = [
   {
-    title: "Mapa operativo",
+    title: "MetaPlan",
     objective: "De la organización invisible al mapa operativo",
     body: "Muchas organizaciones conocen sus departamentos, pero no visualizan con claridad cómo colaboran para entregar un servicio, resolver una necesidad o completar una operación. La Ingeniería Visual de Procesos no comienza dibujando tareas internas. Comienza identificando quién participa y qué intercambia con los demás. Cada flecha numerada se convertirá posteriormente en un proceso del inventario.",
     rule: "Primero descubrimos dónde existen los procesos. Después podremos profundizar en cómo se ejecutan.",

@@ -1,13 +1,11 @@
 ﻿import { MouseEvent, PointerEvent as ReactPointerEvent, ReactNode, useEffect, useMemo, useRef, useState } from "react";
 import ReactFlow, { Background, ConnectionMode, Controls, EdgeLabelRenderer, EdgeProps, Handle, NodeProps, NodeResizer, PanOnScrollMode, Panel, Position, useReactFlow } from "reactflow";
 import { ArrowRight, CheckCircle2, Download, Eye, FileSpreadsheet, Hand, Lock, Maximize, Menu, MousePointer2, Plus, Printer, RotateCcw, RotateCw, Save, Share2, SquarePlus, Trash2, Unlock } from "lucide-react";
-import { DndContext, DragEndEvent, useDraggable, useDroppable } from "@dnd-kit/core";
-import { CSS } from "@dnd-kit/utilities";
 import * as htmlToImage from "html-to-image";
 import * as XLSX from "xlsx";
 import { academicTabs } from "./data";
 import { applyFlowEdgeChanges, applyFlowNodeChanges, toFlowEdges, toFlowNodes, useAppStore } from "./store";
-import { Entity, MacroprocessType, Process, ProcessMapCategory } from "./types";
+import { Entity, MacroprocessType, Process } from "./types";
 
 const logoUrl = "/assets/docroi-logo.jpg";
 const nodeTypes = { entityNode: EntityNode };
@@ -279,26 +277,6 @@ export function App() {
   };
 
   const exportJson = () => downloadFile("docroi-metaplan-project.json", JSON.stringify(snapshotStore(store), null, 2), "application/json");
-  const exportCsv = () => downloadFile("docroi-inventario-procesos.csv", toCsv(store), "text/csv");
-  const exportExcel = () => {
-    const wb = XLSX.utils.book_new();
-    XLSX.utils.book_append_sheet(wb, XLSX.utils.aoa_to_sheet([["README"], ["Ingeniería Visual de Procesos · Doc ROI"], ["RASCI_INPUT queda preparado sin asignar R, A, S, C ni I."]]), "README");
-    XLSX.utils.book_append_sheet(wb, XLSX.utils.json_to_sheet(store.entities), "ENTIDADES");
-    XLSX.utils.book_append_sheet(wb, XLSX.utils.json_to_sheet(enrichedProcesses(store)), "PROCESOS");
-    XLSX.utils.book_append_sheet(wb, XLSX.utils.json_to_sheet(store.valueChainStages), "CADENA_VALOR");
-    XLSX.utils.book_append_sheet(wb, XLSX.utils.aoa_to_sheet([["process_id", "proceso", "supplier", "customer", "R", "A", "S", "C", "I"], ...enrichedProcesses(store).map((p) => [p.id, p.name, p.supplier, p.customer, "", "", "", "", ""])]), "RASCI_INPUT");
-    XLSX.utils.book_append_sheet(wb, XLSX.utils.json_to_sheet([{ schemaVersion: store.schemaVersion, exportedAt: new Date().toISOString() }]), "METADATA");
-    XLSX.writeFile(wb, "docroi-procesos.xlsx");
-  };
-  const exportPng = async (kind: "metaplan" | "map") => {
-    const element = kind === "metaplan" ? metaplanRef.current : mapRef.current;
-    if (!element) return;
-    const dataUrl = await htmlToImage.toPng(element, { cacheBust: true, backgroundColor: "#ffffff" });
-    const link = document.createElement("a");
-    link.href = dataUrl;
-    link.download = kind === "metaplan" ? "docroi-metaplan.png" : "docroi-mapa-procesos.png";
-    link.click();
-  };
 
   const createCanvasSheet = async () => {
     if (!exportFrameRef.current) return null;
@@ -313,10 +291,15 @@ export function App() {
     sheet.innerHTML = `
       <header>
         <img src="${logoUrl}" alt="DocROI" />
-        <strong>${escapeHtml(store.project.name || "Metaplan DocROI")}</strong>
+        <div>
+          <strong>${escapeHtml(store.project.name || "MetaPlan DocROI")}</strong>
+          <span>MetaPlan · Levantamiento</span>
+          <small>${formatExportDate(new Date())}</small>
+        </div>
       </header>
       <main>
         <img src="${canvasImage}" alt="Metaplan exportado" />
+        ${relationDetailsHtml(store.processes, store.entities)}
       </main>
     `;
     document.body.appendChild(sheet);
@@ -326,7 +309,7 @@ export function App() {
         backgroundColor: "#ffffff",
         pixelRatio: 2,
         width: 1600,
-        height: 1000
+        height: Math.max(1000, 760 + store.processes.length * 92)
       });
     } finally {
       sheet.remove();
@@ -338,7 +321,7 @@ export function App() {
     if (!sheetImage) return;
     const printWindow = window.open("", "_blank", "width=1200,height=820");
     if (!printWindow) {
-      downloadDataUrl("docroi-metaplan-lamina.png", sheetImage);
+      downloadDataUrl(exportFileName("metaplan", store.project.name, "png"), sheetImage);
       setToast("No se pudo abrir la ventana de impresión. He descargado la imagen.");
       return;
     }
@@ -346,7 +329,7 @@ export function App() {
       <!doctype html>
       <html>
         <head>
-          <title>${mode === "pdf" ? "PDF" : "Imprimir"} · ${escapeHtml(store.project.name || "Metaplan DocROI")}</title>
+          <title>${exportFileName("metaplan", store.project.name, "pdf")}</title>
           <style>
             @page { size: A4 landscape; margin: 8mm; }
             * { box-sizing: border-box; }
@@ -366,13 +349,14 @@ export function App() {
     const sheetImage = await createCanvasSheet();
     if (!sheetImage) return;
     const blob = await (await fetch(sheetImage)).blob();
-    const file = new File([blob], "docroi-metaplan.png", { type: "image/png" });
+    const file = new File([blob], exportFileName("metaplan", store.project.name, "png"), { type: "image/png" });
     if (navigator.share && navigator.canShare?.({ files: [file] })) {
-      await navigator.share({ title: store.project.name, text: "Metaplan DocROI", files: [file] });
+      await navigator.share({ title: store.project.name, text: "MetaPlan generado con Doc ROI", files: [file] });
       return;
     }
-    downloadDataUrl("docroi-metaplan.png", sheetImage);
-    setToast("Imagen preparada para compartir.");
+    downloadDataUrl(file.name, sheetImage);
+    navigator.clipboard?.writeText("MetaPlan generado con Doc ROI");
+    setToast("Imagen preparada para adjuntar en WhatsApp, correo, Teams u otra aplicación.");
   };
 
   const alignSelection = (mode: "left" | "top") => {
@@ -416,9 +400,9 @@ export function App() {
               <button type="button" onClick={() => goToSection("top")}>Inicio</button>
               <button type="button" onClick={() => goToSection("formation")}>Consulta formativa</button>
               <button type="button" onClick={() => goToSection("transition")}>Antes del laboratorio</button>
-              <button type="button" onClick={() => goToLabBlock("metaplan")}>Mapa operativo</button>
-              <button type="button" onClick={() => goToLabBlock("inventory")}>Inventario de procesos</button>
-              <button type="button" onClick={() => goToLabBlock("map")}>Mapa de procesos</button>
+              <button type="button" onClick={() => goToLabBlock("metaplan")}>MetaPlan (Levantamiento)</button>
+              <button type="button" onClick={() => goToLabBlock("inventory")}>Inventario de Procesos (Identificación)</button>
+              <button type="button" onClick={() => goToLabBlock("map")}>Mapa de Procesos (Definición)</button>
               <button type="button" onClick={() => goToSection("results-title")}>Resultados y exportación</button>
             </div>
           )}
@@ -448,7 +432,7 @@ export function App() {
             <dl>
               <div><dt>Nivel</dt><dd>BASIC · C-Level / Máster</dd></div>
               <div><dt>Metodología</dt><dd>Metaplan interactivo</dd></div>
-              <div><dt>Resultado</dt><dd>Mapa operativo + inventario + mapa de procesos</dd></div>
+              <div><dt>Resultado</dt><dd>MetaPlan + inventario de procesos + mapa de procesos</dd></div>
               <div><dt>Duración orientativa</dt><dd>20-40 minutos</dd></div>
             </dl>
           </aside>
@@ -503,13 +487,13 @@ export function App() {
           </div>
           <div className="editor-status-top"><span><CheckCircle2 size={16} /> Proyecto activo</span><span>Modo: {tool === "entity" ? "haz clic en el lienzo para colocar una entidad" : tool === "relation" ? "arrastra desde un puerto para conectar" : "manual"}</span></div>
           <div className="lab-tabs progressive-tabs" role="tablist" aria-label="Vistas del laboratorio">
-            <button className={labView === "metaplan" ? "active" : ""} onClick={() => setLabView("metaplan")}>1 <span>Mapa operativo</span></button>
-            <button disabled={store.processes.length === 0} className={labView === "inventory" ? "active" : ""} onClick={() => setLabView("inventory")}>2 <span>Inventario</span></button>
-            <button disabled={store.processes.length === 0} className={labView === "map" ? "active" : ""} onClick={() => setLabView("map")}>3 <span>Mapa de procesos</span></button>
+            <button className={labView === "metaplan" ? "active" : ""} onClick={() => setLabView("metaplan")}>1. <span>MetaPlan (Levantamiento)</span></button>
+            <button disabled={store.processes.length === 0} className={labView === "inventory" ? "active" : ""} onClick={() => setLabView("inventory")}>2. <span>Inventario de Procesos (Identificación)</span></button>
+            <button disabled={store.processes.length === 0} className={labView === "map" ? "active" : ""} onClick={() => setLabView("map")}>3. <span>Mapa de Procesos (Definición)</span></button>
 
           </div>
           <div className="module-container" ref={moduleContainerRef}>
-            <h2 ref={moduleTitleRef} tabIndex={-1} className="module-title">{labView === "metaplan" ? "Mapa operativo" : labView === "inventory" ? "Inventario de procesos" : "Mapa de procesos"}</h2>
+            <h2 ref={moduleTitleRef} tabIndex={-1} className="module-title">{labView === "metaplan" ? "MetaPlan (Levantamiento)" : labView === "inventory" ? "Inventario de Procesos (Identificación)" : "Mapa de Procesos (Definición)"}</h2>
 
           {labView === "metaplan" && (
             <div ref={exportFrameRef} className={rightPanelOpen ? "free-workspace" : "free-workspace panel-hidden"}>
@@ -604,14 +588,17 @@ export function App() {
               {!rightPanelOpen && <button className="reopen-panel" onClick={() => setRightPanelOpen(true)}>Mostrar configuración</button>}
               {rightPanelOpen && <RightLegendPanel selectedEntity={selectedEntity} selectedProcess={selectedProcess} setLabView={setLabView} onClose={() => setRightPanelOpen(false)} />}
               <div className="bottom-bar canvas-export-actions" aria-label="Salidas del Metaplan">
-                <button onClick={() => openPrintableCanvas("print")}><Printer size={16} /> Imprimir canvas</button>
-                <button onClick={() => openPrintableCanvas("pdf")}><Download size={16} /> PDF horizontal</button>
-                <button onClick={shareCanvasImage}><Share2 size={16} /> Compartir imagen</button>
+                <button onClick={async () => {
+                  const image = await createCanvasSheet();
+                  if (image) downloadDataUrl(exportFileName("metaplan", store.project.name, "png"), image);
+                }}><Download size={16} /> Descargar imagen</button>
+                <button onClick={() => openPrintableCanvas("pdf")}><Printer size={16} /> Descargar PDF</button>
+                <button onClick={shareCanvasImage}><Share2 size={16} /> Compartir</button>
               </div>
             </div>
           )}
 
-          {labView === "inventory" && (store.processes.length > 0 ? <InventoryCards setLabView={setLabView} /> : <LockedView title="Tus relaciones se convertirán aquí en procesos." />)}
+          {labView === "inventory" && (store.processes.length > 0 ? <InventoryTable /> : <LockedView title="Tus relaciones se convertirán aquí en procesos." />)}
           {labView === "map" && (store.processes.length > 0 ? <ProcessMap mapRef={mapRef} /> : <LockedView title="El mapa ejecutivo se generará después de clasificar las relaciones." />)}
           </div>
         </section>
@@ -623,18 +610,6 @@ export function App() {
                 <span className="section-chip">Salida final</span>
                 <h2 id="results-title">Tu arquitectura operativa está preparada</h2>
                 <p>{store.entities.length} entidades · {store.processes.length} procesos · 3 tipos de macroproceso · 1 mapa de procesos.</p>
-              </div>
-              <div className="toolbar export-actions">
-                <button onClick={exportExcel}><FileSpreadsheet size={16} /> Descargar Excel</button>
-                <button onClick={() => exportPng("map")}><Download size={16} /> Descargar mapa</button>
-                <button onClick={exportJson}>Guardar proyecto</button>
-                <details>
-                  <summary>Más formatos</summary>
-                  <button onClick={exportJson}>JSON</button>
-                  <button onClick={exportCsv}>CSV</button>
-                  <button onClick={() => exportPng("metaplan")}>PNG Metaplan</button>
-                  <button onClick={() => window.print()}>Imprimir</button>
-                </details>
               </div>
             </div>
           </section>
@@ -1045,83 +1020,50 @@ function ProcessLegend() {
   );
 }
 
-function InventoryCards({ setLabView }: { setLabView: (view: LabView) => void }) {
-  const store = useAppStore();
-  const [table, setTable] = useState(false);
-  if (table) return <InventoryTable />;
-  return (
-    <div className="inventory-cards">
-      <div className="inventory-head"><h2>Procesos descubiertos</h2><button onClick={() => setTable(true)}>Vista tabla</button></div>
-      {store.processes.map((process) => (
-        <article key={process.id} className="process-card">
-          <h3>{process.displayOrder} · {process.name}</h3>
-          <p>{entityName(store.entities, process.sourceEntityId)} → {entityName(store.entities, process.targetEntityId)}</p>
-          <span>Estado: {process.status === "complete" ? "revisado" : "pendiente de completar"}</span>
-          <div>
-            <button onClick={() => store.selectProcess(process.id)}>Completar</button>
-            <button onClick={() => { store.selectProcess(process.id); setLabView("metaplan"); }}>Ver en el mapa</button>
-            <button onClick={() => setLabView("map")}>Ver en mapa de procesos</button>
-          </div>
-        </article>
-      ))}
-    </div>
-  );
-}
-
 function InventoryTable() {
   const store = useAppStore();
   const rows = enrichedProcesses(store);
+  const exportInventoryExcel = () => {
+    const exportedAt = formatExportDate(new Date());
+    const headers = ["Identificador", "Proceso", "Entidad de origen", "Entidad de destino", "Descripción", "Macroproceso", "Input", "Output", "Estado"];
+    const body = rows.map((p) => [p.visibleId ?? p.displayOrder, p.name, p.supplier, p.customer, p.description, p.stage, p.input, p.output, p.status]);
+    const worksheet = XLSX.utils.aoa_to_sheet([
+      ["DOC ROI"],
+      [store.project.name],
+      ["Inventario de Procesos · Identificación"],
+      [`Fecha de exportación: ${exportedAt}`],
+      [],
+      headers,
+      ...body
+    ]);
+    worksheet["!cols"] = [{ wch: 14 }, { wch: 34 }, { wch: 26 }, { wch: 26 }, { wch: 44 }, { wch: 34 }, { wch: 30 }, { wch: 30 }, { wch: 14 }];
+    worksheet["!autofilter"] = { ref: `A6:I${body.length + 6}` };
+    const workbook = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(workbook, worksheet, "Inventario de Procesos");
+    XLSX.writeFile(workbook, exportFileName("inventario-procesos", store.project.name, "xlsx"));
+  };
+  const openInventoryPdf = () => {
+    openPrintDocument(buildInventoryPrintHtml(store.project.name, rows), exportFileName("inventario-procesos", store.project.name, "pdf"));
+  };
+  const shareInventory = async () => {
+    const html = buildInventoryPrintHtml(store.project.name, rows);
+    const file = new File([new Blob([html], { type: "text/html;charset=utf-8" })], exportFileName("inventario-procesos", store.project.name, "html"), { type: "text/html" });
+    if (navigator.share && navigator.canShare?.({ files: [file] })) {
+      await navigator.share({ title: store.project.name, text: "Inventario de Procesos generado con Doc ROI", files: [file] });
+      return;
+    }
+    openPrintDocument(html, exportFileName("inventario-procesos", store.project.name, "pdf"));
+  };
   return (
     <div className="inventory-view">
-      <table><thead><tr>{["Nº", "Proceso", "Supplier", "Customer", "Estado", "Macroproceso"].map((h) => <th key={h}>{h}</th>)}</tr></thead><tbody>{rows.map((p) => <tr key={p.id} className={store.selectedProcessId === p.id ? "active" : ""} onClick={() => store.selectProcess(p.id)}><td>{p.displayOrder}</td><td><strong>{p.name}</strong><details><summary>Input / Output</summary>{p.input || "Sin input"} → {p.output || "Sin output"}</details></td><td>{p.supplier}</td><td>{p.customer}</td><td>{p.status}</td><td>{p.stage}</td></tr>)}</tbody></table>
-    </div>
-  );
-}
-
-function ValueChain() {
-  const store = useAppStore();
-  const [started, setStarted] = useState(store.processes.some((process) => process.valueChainStageId));
-  const onDragEnd = (event: DragEndEvent) => {
-    const processId = String(event.active.id);
-    const stageId = event.over?.id ? String(event.over.id) : null;
-    if (stageId) store.moveProcessToStage(processId, stageId);
-  };
-  if (!started) {
-    return (
-      <div className="chain-start">
-        <h2>Organiza tus procesos</h2>
-        <p>Agrupa los procesos que cumplen una finalidad similar.</p>
-        <div>
-          <button onClick={() => { loadTemplate("commercial"); setStarted(true); }}>Usar una plantilla</button>
-          <button onClick={() => setStarted(true)}>Crear mi cadena</button>
-          <button onClick={() => { loadTemplate("service"); setStarted(true); }}>Ayudarme a clasificar</button>
-        </div>
+      <div className="bottom-bar inventory-export-actions">
+        <button onClick={exportInventoryExcel}><FileSpreadsheet size={16} /> Descargar Excel</button>
+        <button onClick={openInventoryPdf}><Printer size={16} /> Descargar PDF</button>
+        <button onClick={shareInventory}><Share2 size={16} /> Compartir</button>
       </div>
-    );
-  }
-  return (
-    <div className="chain-view">
-      <div className="toolbar"><button onClick={store.addStage}>Nuevo macroproceso</button><button onClick={() => loadTemplate("commercial")}>Comercial</button><button onClick={() => loadTemplate("operations")}>Operaciones</button><button onClick={() => loadTemplate("service")}>Servicio</button></div>
-      <DndContext onDragEnd={onDragEnd}><div className="kanban">{[...store.valueChainStages].sort((a, b) => a.order - b.order).map((stage) => <StageColumn key={stage.id} stageId={stage.id} name={stage.name}><input className="stage-title" value={stage.name} onChange={(event) => store.updateStage(stage.id, { name: event.target.value })} /><select value={stage.category} onChange={(event) => store.updateStage(stage.id, { category: event.target.value as ProcessMapCategory })}><option value="strategic">Estratégico</option><option value="core">Clave / Operativo</option><option value="support">Apoyo / Soporte</option></select><div className="stage-cards">{store.processes.filter((process) => process.valueChainStageId === stage.id).map((process) => <DraggableCard key={process.id} process={process} />)}</div></StageColumn>)}</div></DndContext>
+      <table><thead><tr>{["Identificador", "Proceso", "Origen", "Destino", "Descripción", "Input", "Output", "Estado", "Macroproceso"].map((h) => <th key={h}>{h}</th>)}</tr></thead><tbody>{rows.map((p) => <tr key={p.id} className={store.selectedProcessId === p.id ? "active" : ""} onClick={() => store.selectProcess(p.id)}><td>{p.visibleId ?? p.displayOrder}</td><td><strong>{p.name}</strong></td><td>{p.supplier}</td><td>{p.customer}</td><td>{p.description}</td><td>{p.input}</td><td>{p.output}</td><td>{p.status}</td><td>{p.stage}</td></tr>)}</tbody></table>
     </div>
   );
-}
-
-function loadTemplate(kind: "commercial" | "operations" | "service") {
-  const names = kind === "commercial" ? ["Estrategia", "Preventa", "Venta", "Entrega", "Postventa"] : kind === "operations" ? ["Planificación", "Aprovisionamiento", "Producción", "Control", "Entrega"] : ["Solicitud", "Diagnóstico", "Prestación", "Validación", "Seguimiento"];
-  const store = useAppStore.getState();
-  names.forEach((name, index) => store.updateStage(store.valueChainStages[index]?.id ?? "", { name, category: index === 0 ? "strategic" : index === names.length - 1 ? "support" : "core" }));
-}
-
-function StageColumn({ stageId, name, children }: { stageId: string; name: string; children: ReactNode }) {
-  const { isOver, setNodeRef } = useDroppable({ id: stageId });
-  return <div className={isOver ? "stage over" : "stage"} ref={setNodeRef} aria-label={`Macroproceso ${name}`}>{children}</div>;
-}
-
-function DraggableCard({ process }: { process: Process }) {
-  const store = useAppStore();
-  const { attributes, listeners, setNodeRef, transform, isDragging } = useDraggable({ id: process.id });
-  return <button ref={setNodeRef} style={{ transform: CSS.Translate.toString(transform) }} className={isDragging ? "value-card dragging" : "value-card"} onClick={() => store.selectProcess(process.id)} {...listeners} {...attributes}><strong>{process.displayOrder}. {process.name}</strong><span>{entityName(store.entities, process.sourceEntityId)} → {entityName(store.entities, process.targetEntityId)}</span></button>;
 }
 
 function ProcessMap({ mapRef }: { mapRef: React.RefObject<HTMLDivElement> }) {
@@ -1148,17 +1090,17 @@ function ProcessMap({ mapRef }: { mapRef: React.RefObject<HTMLDivElement> }) {
   };
   const downloadMapImage = async () => {
     const image = await makeMapImage();
-    if (image) downloadDataUrl(`${safeFileName(store.project.name)}-mapa-procesos.png`, image);
+    if (image) downloadDataUrl(exportFileName("mapa-procesos", store.project.name, "png"), image);
   };
   const downloadMapPdf = async () => {
     const image = await makeMapImage();
     if (!image) return;
     const printWindow = window.open("", "_blank", "width=1200,height=820");
     if (!printWindow) {
-      downloadDataUrl(`${safeFileName(store.project.name)}-mapa-procesos.png`, image);
+      downloadDataUrl(exportFileName("mapa-procesos", store.project.name, "png"), image);
       return;
     }
-    printWindow.document.write(`<!doctype html><html><head><title>Mapa de procesos · ${escapeHtml(store.project.name)}</title><style>@page{size:A4 landscape;margin:8mm}body{margin:0;background:#fff}img{display:block;width:100%;height:auto}</style></head><body><img src="${image}" alt="Mapa de procesos DocROI" /></body></html>`);
+    printWindow.document.write(`<!doctype html><html><head><title>${exportFileName("mapa-procesos", store.project.name, "pdf")}</title><style>@page{size:A4 landscape;margin:8mm}body{margin:0;background:#fff}img{display:block;width:100%;height:auto}</style></head><body><img src="${image}" alt="Mapa de procesos DocROI" /></body></html>`);
     printWindow.document.close();
     printWindow.focus();
     printWindow.onload = () => printWindow.print();
@@ -1167,9 +1109,9 @@ function ProcessMap({ mapRef }: { mapRef: React.RefObject<HTMLDivElement> }) {
     const image = await makeMapImage();
     if (!image) return;
     const blob = await (await fetch(image)).blob();
-    const file = new File([blob], `${safeFileName(store.project.name)}-mapa-procesos.png`, { type: "image/png" });
+    const file = new File([blob], exportFileName("mapa-procesos", store.project.name, "png"), { type: "image/png" });
     if (navigator.share && navigator.canShare?.({ files: [file] })) {
-      await navigator.share({ title: store.project.name, text: "Mapa de procesos DocROI", files: [file] });
+      await navigator.share({ title: store.project.name, text: "Mapa de Procesos generado con Doc ROI", files: [file] });
       return;
     }
     downloadDataUrl(file.name, image);
@@ -1181,7 +1123,11 @@ function ProcessMap({ mapRef }: { mapRef: React.RefObject<HTMLDivElement> }) {
         <div className="process-map-export-frame" ref={exportRef}>
           <header className="process-map-brand">
             <img src={logoUrl} alt="DocROI" />
-            <strong>{store.project.name || "Mapa de procesos DocROI"}</strong>
+            <div>
+              <strong>{store.project.name || "Mapa de Procesos DocROI"}</strong>
+              <span>Mapa de Procesos · Definición</span>
+              <small>{formatExportDate(new Date())}</small>
+            </div>
           </header>
           <div className="process-map">
             <aside className="map-side">
@@ -1191,7 +1137,7 @@ function ProcessMap({ mapRef }: { mapRef: React.RefObject<HTMLDivElement> }) {
             <main className="map-zones">
               <div className="process-map-toolbar">
                 <div>
-                  <h3>Mapa de procesos</h3>
+                  <h3>Mapa de Procesos (Definición)</h3>
                   {pendingCount > 0 && <p>{pendingCount} relación(es) pendientes de clasificar.</p>}
                 </div>
                 <div className="map-filter">
@@ -1460,8 +1406,73 @@ function downloadDataUrl(name: string, dataUrl: string) {
   link.click();
 }
 
+function formatExportDate(date: Date) {
+  return new Intl.DateTimeFormat("es-ES", { dateStyle: "medium", timeStyle: "short" }).format(date);
+}
+
 function safeFileName(value: string) {
-  return (value || "docroi-mapa-procesos").normalize("NFD").replace(/[\u0300-\u036f]/g, "").replace(/[^a-zA-Z0-9-]+/g, "-").replace(/-+/g, "-").replace(/^-|-$/g, "").toLowerCase();
+  return (value || "doc-roi").normalize("NFD").replace(/[\u0300-\u036f]/g, "").replace(/[^a-zA-Z0-9-]+/g, "-").replace(/-+/g, "-").replace(/^-|-$/g, "").toLowerCase();
+}
+
+function exportDateStamp(date = new Date()) {
+  return date.toISOString().slice(0, 10);
+}
+
+function exportFileName(kind: "metaplan" | "inventario-procesos" | "mapa-procesos", projectName: string, extension: "png" | "pdf" | "xlsx" | "html") {
+  return `doc-roi-${kind}-${safeFileName(projectName)}-${exportDateStamp()}.${extension}`;
+}
+
+function relationDetailsHtml(processes: Process[], entities: Entity[]) {
+  const items = processes.map((process) => {
+    const fields = [
+      ["Origen", entityName(entities, process.sourceEntityId)],
+      ["Destino", entityName(entities, process.targetEntityId)],
+      ["Descripción", process.description],
+      ["Input", process.input],
+      ["Output", process.output],
+      ["Tipo de relación", process.direction === "bidirectional" ? "Bidireccional" : "Unidireccional"],
+      ["Macroproceso", macroprocessLabel(process.macroprocessType)]
+    ].filter(([, value]) => String(value ?? "").trim());
+    return `<article><h3>${escapeHtml(String(process.visibleId ?? process.displayOrder))} · ${escapeHtml(process.name)}</h3>${fields.map(([label, value]) => `<p><strong>${escapeHtml(label)}:</strong> ${escapeHtml(String(value))}</p>`).join("")}</article>`;
+  });
+  if (!items.length) return "";
+  return `<section class="export-relation-details"><h2>Detalle de relaciones</h2>${items.join("")}</section>`;
+}
+
+function openPrintDocument(html: string, title: string) {
+  const printWindow = window.open("", "_blank", "width=1200,height=820");
+  if (!printWindow) return;
+  printWindow.document.write(html);
+  printWindow.document.close();
+  printWindow.focus();
+  printWindow.onload = () => printWindow.print();
+  printWindow.document.title = title;
+}
+
+function buildInventoryPrintHtml(projectName: string, rows: ReturnType<typeof enrichedProcesses>) {
+  const headers = ["Identificador", "Proceso", "Origen", "Destino", "Descripción", "Input", "Output", "Estado", "Macroproceso"];
+  const body = rows.map((p) => [p.visibleId ?? p.displayOrder, p.name, p.supplier, p.customer, p.description, p.input, p.output, p.status, p.stage]);
+  return `<!doctype html>
+    <html><head><meta charset="utf-8" /><title>${exportFileName("inventario-procesos", projectName, "pdf")}</title>
+    <style>
+      @page { size: A3 landscape; margin: 10mm; }
+      * { box-sizing: border-box; }
+      body { margin: 0; font-family: Arial, sans-serif; color: #0B0F19; background: #fff; }
+      header { display: flex; align-items: center; gap: 18px; background: #0B0F19; color: #fff; padding: 16px 20px; }
+      header img { width: 130px; height: 38px; object-fit: contain; }
+      header strong { display: block; font-size: 18px; }
+      header span { color: #D8ECF8; font-weight: 800; }
+      header small { display: block; margin-top: 4px; opacity: .78; }
+      main { padding: 18px; }
+      table { width: 100%; border-collapse: collapse; table-layout: fixed; font-size: 10px; }
+      thead { display: table-header-group; }
+      th { background: #0B0F19; color: #fff; text-align: left; padding: 7px; border: 1px solid #243447; }
+      td { vertical-align: top; padding: 7px; border: 1px solid #ccd8e2; white-space: pre-wrap; overflow-wrap: anywhere; }
+      tr { break-inside: avoid; page-break-inside: avoid; }
+    </style></head><body>
+      <header><img src="${logoUrl}" alt="DocROI" /><div><strong>${escapeHtml(projectName)}</strong><span>Inventario de Procesos · Identificación</span><small>${formatExportDate(new Date())}</small></div></header>
+      <main><table><thead><tr>${headers.map((header) => `<th>${escapeHtml(header)}</th>`).join("")}</tr></thead><tbody>${body.map((row) => `<tr>${row.map((cell) => `<td>${escapeHtml(String(cell ?? ""))}</td>`).join("")}</tr>`).join("")}</tbody></table></main>
+    </body></html>`;
 }
 
 function escapeHtml(value: string) {

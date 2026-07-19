@@ -604,12 +604,11 @@ button.collapse-panel:focus-visible {
   left: -10000px;
   top: 0;
   width: 1600px;
-  height: 1000px;
   display: grid;
-  grid-template-rows: 92px minmax(0, 1fr);
+  grid-template-rows: auto 1fr;
   background: #fff;
   color: #071a2b;
-  overflow: hidden;
+  overflow: visible;
 }
 .export-sheet header {
   display: flex;
@@ -626,25 +625,58 @@ button.collapse-panel:focus-visible {
   object-position: left center;
 }
 .export-sheet header strong {
+  display: block;
   min-width: 0;
   font-size: 30px;
   line-height: 1.1;
   font-weight: 900;
 }
+.export-sheet header span {
+  display: block;
+  margin-top: 4px;
+  color: #d8ecf8;
+  font-size: 18px;
+  font-weight: 900;
+}
+.export-sheet header small {
+  display: block;
+  margin-top: 4px;
+  color: rgba(255,255,255,.76);
+  font-weight: 700;
+}
 .export-sheet main {
   display: grid;
-  place-items: center;
+  gap: 26px;
+  justify-items: center;
   padding: 30px;
   background: #fff;
 }
 .export-sheet main > img {
   max-width: 100%;
-  max-height: 100%;
   width: auto;
   height: auto;
   border: 1px solid #d6e0e8;
   box-shadow: 0 18px 48px rgba(7,26,43,.12);
 }
+.export-relation-details {
+  width: 100%;
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 12px;
+}
+.export-relation-details h2 {
+  grid-column: 1 / -1;
+  font-size: 26px;
+}
+.export-relation-details article {
+  break-inside: avoid;
+  border: 1px solid #d6e0e8;
+  border-left: 6px solid #003b5c;
+  border-radius: 8px;
+  padding: 12px 14px;
+}
+.export-relation-details h3 { font-size: 18px; margin-bottom: 7px; }
+.export-relation-details p { margin: 3px 0; font-size: 13px; line-height: 1.32; }
 .lab-shell.progressive { background: #f7fafc; }
 .workbar {
   display: grid;
@@ -1016,6 +1048,8 @@ tr.active td { background: #e8f6fb; }
 }
 .process-map-brand img { width: 118px; height: 34px; object-fit: contain; }
 .process-map-brand strong { font-size: 18px; line-height: 1.15; }
+.process-map-brand span { display: block; color: #d8ecf8; font-size: 13px; font-weight: 900; margin-top: 2px; }
+.process-map-brand small { display: block; color: rgba(255,255,255,.72); font-size: 11px; margin-top: 2px; }
 .process-map { display: grid; grid-template-columns: 210px minmax(0, 1fr) 210px; gap: 16px; padding: 18px; background: #fff; }
 .process-map-toolbar { display: flex; justify-content: space-between; align-items: start; gap: 14px; margin-bottom: 12px; }
 .process-map-toolbar h3 { margin: 0; }
