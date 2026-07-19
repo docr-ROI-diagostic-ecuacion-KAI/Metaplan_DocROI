@@ -14,6 +14,12 @@ type LabView = "metaplan" | "inventory" | "map";
 type CanvasTool = "select" | "move" | "entity" | "relation";
 type EntityDialogState = { open: boolean; position: { x: number; y: number }; primary: boolean; nearId?: string };
 type RelationDraft = { sourceId: string; targetId: string; direction: "source-target" | "target-source" | "bidirectional"; name: string; reverseName: string; macroprocessType: MacroprocessType };
+type SaveFilePickerWindow = Window & {
+  showSaveFilePicker?: (options?: {
+    suggestedName?: string;
+    types?: { description: string; accept: Record<string, string[]> }[];
+  }) => Promise<{ createWritable: () => Promise<{ write: (data: Blob) => Promise<void>; close: () => Promise<void> }> }>;
+};
 
 const macroprocessOptions: { value: MacroprocessType; label: string }[] = [
   { value: "strategic", label: "Procesos estratégicos" },
@@ -251,9 +257,34 @@ export function App() {
     pendingConnectionRef.current = null;
   };
 
-  const saveProject = () => {
-    localStorage.setItem("docroi-ingenieria-visual-procesos", JSON.stringify(snapshotStore(store)));
-    setToast("Proyecto guardado en este equipo.");
+  const saveProject = async () => {
+    const content = JSON.stringify(snapshotStore(store), null, 2);
+    const fileName = projectFileName(store.project.name);
+    localStorage.setItem("docroi-ingenieria-visual-procesos", content);
+    setToast("Elige dónde guardar el proyecto editable DocROI (.docroi.json).");
+    try {
+      const picker = (window as SaveFilePickerWindow).showSaveFilePicker;
+      if (picker) {
+        const handle = await picker({
+          suggestedName: fileName,
+          types: [{ description: "Proyecto editable DocROI (.docroi.json)", accept: { "application/json": [".docroi.json", ".json"] } }]
+        });
+        const writable = await handle.createWritable();
+        await writable.write(new Blob([content], { type: "application/json;charset=utf-8" }));
+        await writable.close();
+        setToast(`Guardado: ${fileName}. Es tu archivo editable del Metaplan.`);
+        return;
+      }
+      downloadFile(fileName, content, "application/json");
+      setToast(`Descargado: ${fileName}. Es tu archivo editable del Metaplan.`);
+    } catch (error) {
+      if (error instanceof DOMException && error.name === "AbortError") {
+        setToast("Guardado cancelado. La copia automática sigue en este navegador.");
+        return;
+      }
+      console.error("Project save failed", error);
+      setToast("No se pudo abrir la ventana de guardado. La copia automática sigue en este navegador.");
+    }
   };
 
   const clearCanvas = () => {
@@ -285,7 +316,7 @@ export function App() {
     setToast("Proyecto cargado. Puedes seguir editándolo en el mapa.");
   };
 
-  const exportJson = () => downloadFile("docroi-metaplan-project.json", JSON.stringify(snapshotStore(store), null, 2), "application/json");
+  const exportJson = () => downloadFile(projectFileName(store.project.name), JSON.stringify(snapshotStore(store), null, 2), "application/json");
 
   const createCanvasSheet = async () => {
     setToast("Preparando exportación del MetaPlan completo...");
@@ -475,8 +506,7 @@ export function App() {
               <label className="project-field">Proyecto<input value={store.project.name} onChange={(event) => store.updateProject({ name: event.target.value })} /><small>Nombra el caso de trabajo como lo presentaría un CEO o un alumno de máster.</small></label>
               <button title="Abrir archivo editable" onClick={() => openProjectInputRef.current?.click()}>Abrir</button>
               <input ref={openProjectInputRef} hidden type="file" accept=".json,.docroi.json,application/json" onChange={(event) => importJson(event.target.files?.[0] ?? null)} />
-              <button title="Guardar proyecto en este equipo" onClick={saveProject}><Save size={16} /> Guardar</button>
-              <button title="Descargar copia editable" onClick={exportJson}>Guardar como</button>
+              <button title="Guardar archivo editable .docroi.json en una carpeta de Windows" onClick={saveProject}><Save size={16} /> Guardar proyecto</button>
               <button className="ghost-danger" title="Limpiar lienzo" onClick={clearCanvas}><Trash2 size={16} /> Limpiar lienzo</button>
               <button title="Nuevo lienzo limpio" onClick={clearCanvas}><SquarePlus size={16} /> Nuevo lienzo</button>
               <button title="Vista completa" onClick={() => flow.fitView({ padding: 0.18, duration: 220 })}><Maximize size={16} /> Vista completa</button>
@@ -1457,6 +1487,10 @@ function exportDateStamp(date = new Date()) {
 
 function exportFileName(kind: "metaplan" | "inventario-procesos" | "mapa-procesos", projectName: string, extension: "png" | "pdf" | "xlsx" | "html") {
   return `doc-roi-${kind}-${safeFileName(projectName)}-${exportDateStamp()}.${extension}`;
+}
+
+function projectFileName(projectName: string) {
+  return `doc-roi-proyecto-metaplan-${safeFileName(projectName)}-${exportDateStamp()}.docroi.json`;
 }
 
 function buildMetaPlanSvg(entities: Entity[], processes: Process[]) {
