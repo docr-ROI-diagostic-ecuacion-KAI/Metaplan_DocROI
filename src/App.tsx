@@ -18,7 +18,7 @@ type RelationDraft = { sourceId: string; targetId: string; direction: "source-ta
 const macroprocessOptions: { value: MacroprocessType; label: string }[] = [
   { value: "strategic", label: "Procesos estratégicos" },
   { value: "core", label: "Procesos clave / operativos / negocio" },
-  { value: "support", label: "Procesos de apoyo / soporte" }
+  { value: "support", label: "Administración y gestión de recursos" }
 ];
 
 export function App() {
@@ -1373,7 +1373,7 @@ function ProcessMapMini() {
       <div>
         <section className="mini-band strategic"><strong>Estratégicos</strong><span>Gobierno</span><span>Indicadores</span></section>
         <section className="mini-band core"><strong>Clave / operativos</strong><span>Solicitud</span><span>Diseño</span><span>Entrega</span></section>
-        <section className="mini-band support"><strong>Soporte</strong><span>Sistemas</span><span>Proveedor</span></section>
+        <section className="mini-band support"><strong>Administración y gestión de recursos</strong><span>Sistemas</span><span>Proveedor</span></section>
       </div>
     </figure>
   );

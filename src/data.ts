@@ -23,7 +23,7 @@ export const createEmptyProject = (): AppStateData => ({
     { id: uid(), name: "Sin clasificar", order: 0, description: "Procesos pendientes de ordenar.", category: "core" },
     { id: uid(), name: "Estrategia", order: 1, description: "Gobierno, dirección y mejora.", category: "strategic" },
     { id: uid(), name: "Operaciones", order: 2, description: "Ejecución principal del trabajo.", category: "core" },
-    { id: uid(), name: "Soporte", order: 3, description: "Recursos y capacidades transversales.", category: "support" }
+    { id: uid(), name: "Administración y gestión de recursos", order: 3, description: "Recursos y capacidades transversales.", category: "support" }
   ],
   selectedEntityId: null,
   selectedProcessId: null
@@ -55,7 +55,7 @@ export const demoProject = (): AppStateData => {
       { id: proyectos, name: "Proyectos", type: "Interna", description: "Orientación\nDual FP\nDual Universidad\nParticipación Juvenil", isPrimary: false, shape: "rounded-rectangle", position: { x: 1030, y: 250 }, tags: [] },
       { id: partners, name: "Partners", type: "Partner", description: "", isPrimary: false, shape: "rounded-rectangle", position: { x: 570, y: 20 }, tags: [] },
       { id: proveedores, name: "Proveedores", type: "Proveedor", description: "Diseño y desarrollo\nMateria eventos\nElementos de comunicación\nPiezas de contenido\nRecurso Fotos, Sonido Audio\nEspacios (Beltesman y otros)\nAgencia de viajes\nCommunity manager\nOmega (SF)\nPaid", isPrimary: false, shape: "rounded-rectangle", position: { x: 40, y: 250 }, tags: [] },
-      { id: soporte, name: "Soporte IT", type: "Soporte", description: "", isPrimary: false, shape: "rounded-rectangle", position: { x: 230, y: 720 }, tags: [] },
+      { id: soporte, name: "Administración IT", type: "Administración y gestión de recursos", description: "", isPrimary: false, shape: "rounded-rectangle", position: { x: 230, y: 720 }, tags: [] },
       { id: saas, name: "SaaS", type: "Sistema", description: "SalesForces\nCRM-Sales\nMkt Aut\nMicrosoft\nTypeform\nWordpress\nTrint\nChatGPT", isPrimary: false, shape: "rounded-rectangle", position: { x: 230, y: 810 }, tags: [] },
       { id: media, name: "Media", type: "Canal", description: "LinkedIn / Youtube / Instagram / Tradicionales", isPrimary: false, shape: "rounded-rectangle", position: { x: 450, y: 880 }, tags: [] },
       { id: lugar, name: "Lugar del evento", type: "Espacio", description: "", isPrimary: false, shape: "rounded-rectangle", position: { x: 530, y: 1030 }, tags: [] },
@@ -101,7 +101,7 @@ export const recoveredBertelsmannProject = (): AppStateData => {
     entities: [
       { id: comunicacion, name: "Comunicación", type: "Área interna", description: "Gestión de servicios de comunicación\nValidación de materiales\nCoordinación con proveedores", isPrimary: true, shape: "rounded-rectangle", position: { x: 430, y: 240 }, size: { width: 190, height: 92 }, tags: [] },
       { id: proyectos, name: "Proyectos", type: "Área interna", description: "Solicitudes de servicio\nNecesidades de comunicación", isPrimary: false, shape: "rounded-rectangle", position: { x: 820, y: 240 }, size: { width: 180, height: 88 }, tags: [] },
-      { id: proveedores, name: "Proveedores", type: "Proveedor", description: "Servicios externos\nMateriales\nProducción y soporte", isPrimary: false, shape: "rounded-rectangle", position: { x: 70, y: 240 }, size: { width: 190, height: 92 }, tags: [] }
+      { id: proveedores, name: "Proveedores", type: "Proveedor", description: "Servicios externos\nMateriales\nProducción y recursos", isPrimary: false, shape: "rounded-rectangle", position: { x: 70, y: 240 }, size: { width: 190, height: 92 }, tags: [] }
     ],
     processes: [
       { id: uid(), visibleId: "1", displayOrder: 1, name: "SLA Proveedores", sourceEntityId: comunicacion, targetEntityId: proveedores, direction: "unidirectional", input: "Brief de Servicios", output: "Acuerdo de Nivel de Servicios", description: "Acuerdo de nivel de servicio", status: "complete", valueChainStageId: stages[2].id, macroprocessType: "core", lineStyle: "smoothstep", tags: [] },
@@ -168,7 +168,7 @@ export const academicTabs = [
   {
     title: "Mapa de procesos",
     objective: "Del mapa operativo al mapa de procesos",
-    body: "Cada relación creada en el Metaplan produce automáticamente una tarjeta de proceso con número, nombre, supplier, input, output, customer, descripción, estado, macroproceso y categoría del mapa. Después, los procesos se clasifican como estratégicos, clave u operativos, o de apoyo y soporte para representarlos en un mapa general.",
+    body: "Cada relación creada en el Metaplan produce automáticamente una tarjeta de proceso con número, nombre, supplier, input, output, customer, descripción, estado, macroproceso y categoría del mapa. Después, los procesos se clasifican como estratégicos, clave u operativos, o de administración y gestión de recursos para representarlos en un mapa general.",
     rule: "El Metaplan descubre los procesos. El inventario los estructura. La clasificación por macroproceso los ordena. El mapa de procesos comunica el sistema completo.",
     concepts: "proceso · inventario · macroproceso · mapa de procesos",
     source: "Porter, 1985",
