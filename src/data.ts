@@ -83,6 +83,37 @@ export const demoProject = (): AppStateData => {
   };
 };
 
+export const recoveredBertelsmannProject = (): AppStateData => {
+  const base = createEmptyProject();
+  const comunicacion = uid();
+  const proyectos = uid();
+  const proveedores = uid();
+  const stages = base.valueChainStages;
+
+  return {
+    ...base,
+    project: {
+      ...base.project,
+      name: "La Fundación Bertelsmann",
+      organization: "Fundación Bertelsmann",
+      description: "Copia recuperada del trabajo de MetaPlan para inventario de procesos de comunicación."
+    },
+    entities: [
+      { id: comunicacion, name: "Comunicación", type: "Área interna", description: "Gestión de servicios de comunicación\nValidación de materiales\nCoordinación con proveedores", isPrimary: true, shape: "rounded-rectangle", position: { x: 430, y: 240 }, size: { width: 190, height: 92 }, tags: [] },
+      { id: proyectos, name: "Proyectos", type: "Área interna", description: "Solicitudes de servicio\nNecesidades de comunicación", isPrimary: false, shape: "rounded-rectangle", position: { x: 820, y: 240 }, size: { width: 180, height: 88 }, tags: [] },
+      { id: proveedores, name: "Proveedores", type: "Proveedor", description: "Servicios externos\nMateriales\nProducción y soporte", isPrimary: false, shape: "rounded-rectangle", position: { x: 70, y: 240 }, size: { width: 190, height: 92 }, tags: [] }
+    ],
+    processes: [
+      { id: uid(), visibleId: "1", displayOrder: 1, name: "SLA Proveedores", sourceEntityId: comunicacion, targetEntityId: proveedores, direction: "unidirectional", input: "Brief de Servicios", output: "Acuerdo de Nivel de Servicios", description: "Acuerdo de nivel de servicio", status: "complete", valueChainStageId: stages[2].id, macroprocessType: "core", lineStyle: "smoothstep", tags: [] },
+      { id: uid(), visibleId: "2", displayOrder: 2, name: "Solicitud de Servicios de Comunicación (OLA)", sourceEntityId: proyectos, targetEntityId: comunicacion, direction: "unidirectional", input: "", output: "", description: "Acuerdo Interno de prestación de servicios\nMatrices de severidad\nImportante / Urgente\nComplejo / Impacto", status: "partial", valueChainStageId: stages[1].id, macroprocessType: "strategic", lineStyle: "smoothstep", tags: [] },
+      { id: uid(), visibleId: "3", displayOrder: 3, name: "Solicitud y entrega elementos comunicación", sourceEntityId: comunicacion, targetEntityId: proveedores, direction: "unidirectional", input: "", output: "", description: "", status: "partial", valueChainStageId: stages[1].id, macroprocessType: "strategic", lineStyle: "smoothstep", tags: [] },
+      { id: uid(), visibleId: "4", displayOrder: 4, name: "Verificación y Valoración Material", sourceEntityId: proveedores, targetEntityId: comunicacion, direction: "unidirectional", input: "", output: "", description: "", status: "partial", valueChainStageId: stages[1].id, macroprocessType: "strategic", lineStyle: "smoothstep", tags: [] }
+    ],
+    selectedEntityId: comunicacion,
+    selectedProcessId: null
+  };
+};
+
 export const academicTabs = [
   {
     title: "MetaPlan",

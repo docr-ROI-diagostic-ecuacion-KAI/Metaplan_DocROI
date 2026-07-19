@@ -1,7 +1,7 @@
 ﻿import { create } from "zustand";
 import { applyEdgeChanges, applyNodeChanges, Edge, EdgeChange, MarkerType, Node, NodeChange } from "reactflow";
 import { z } from "zod";
-import { createEmptyProject, demoProject, uid } from "./data";
+import { createEmptyProject, demoProject, recoveredBertelsmannProject, uid } from "./data";
 import { AppStateData, Entity, MacroprocessType, Process, ProjectInfo, ValueChainStage } from "./types";
 
 const STORAGE_KEY = "docroi-ingenieria-visual-procesos";
@@ -29,6 +29,7 @@ interface AppStore extends AppStateData {
   hydrate: () => void;
   reset: () => void;
   loadDemo: () => void;
+  loadRecoveredBertelsmann: () => void;
   importProject: (data: unknown) => void;
   updateProject: (patch: Partial<ProjectInfo>) => void;
   addEntity: (position?: { x: number; y: number }) => void;
@@ -128,6 +129,7 @@ export const useAppStore = create<AppStore>((set) => ({
   },
   reset: () => commit(set, () => createEmptyProject()),
   loadDemo: () => commit(set, () => normalizeProject(demoProject())),
+  loadRecoveredBertelsmann: () => commit(set, () => normalizeProject(recoveredBertelsmannProject())),
   importProject: (data) => {
     const parsed = normalizeProject(projectSchema.parse(data) as AppStateData);
     commit(set, () => parsed);

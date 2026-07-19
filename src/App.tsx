@@ -32,6 +32,7 @@ export function App() {
   const [connectFrom, setConnectFrom] = useState<string | null>(null);
   const [relationDraft, setRelationDraft] = useState<RelationDraft | null>(null);
   const [toast, setToast] = useState("");
+  const [exportPreview, setExportPreview] = useState<{ title: string; fileName: string; dataUrl: string } | null>(null);
   const [navOpen, setNavOpen] = useState(false);
   const [demoGuide, setDemoGuide] = useState(false);
   const [tool, setTool] = useState<CanvasTool>("select");
@@ -45,6 +46,7 @@ export function App() {
   const headerMenuRef = useRef<HTMLDivElement>(null);
   const formRef = useRef<HTMLDivElement>(null);
   const labRef = useRef<HTMLDivElement>(null);
+  const openProjectInputRef = useRef<HTMLInputElement>(null);
   const moduleContainerRef = useRef<HTMLDivElement>(null);
   const moduleTitleRef = useRef<HTMLHeadingElement>(null);
   const metaplanRef = useRef<HTMLDivElement>(null);
@@ -270,6 +272,13 @@ export function App() {
     setTimeout(() => flow.fitView({ padding: 0.16, duration: 400 }), 120);
   };
 
+  const recoverBertelsmann = () => {
+    store.loadRecoveredBertelsmann();
+    setLabView("metaplan");
+    setToast("Proyecto recuperado como copia: La Fundación Bertelsmann.");
+    setTimeout(() => flow.fitView({ padding: 0.24, duration: 400 }), 120);
+  };
+
   const importJson = async (file: File | null) => {
     if (!file) return;
     store.importProject(JSON.parse(await file.text()));
@@ -279,13 +288,8 @@ export function App() {
   const exportJson = () => downloadFile("docroi-metaplan-project.json", JSON.stringify(snapshotStore(store), null, 2), "application/json");
 
   const createCanvasSheet = async () => {
-    if (!exportFrameRef.current) return null;
-    const canvasImage = await htmlToImage.toPng(exportFrameRef.current, {
-      cacheBust: true,
-      backgroundColor: "#ffffff",
-      pixelRatio: 2,
-      filter: (node) => !(node instanceof HTMLElement && node.classList.contains("canvas-export-actions"))
-    });
+    setToast("Preparando exportación del MetaPlan completo...");
+    const metaplanSvg = buildMetaPlanSvg(store.entities, store.processes);
     const sheet = document.createElement("div");
     sheet.className = "export-sheet";
     sheet.innerHTML = `
@@ -298,19 +302,26 @@ export function App() {
         </div>
       </header>
       <main>
-        <img src="${canvasImage}" alt="Metaplan exportado" />
+        <div class="export-metaplan-map">${metaplanSvg}</div>
         ${relationDetailsHtml(store.processes, store.entities)}
       </main>
     `;
     document.body.appendChild(sheet);
     try {
-      return await htmlToImage.toPng(sheet, {
+      setToast("Generando imagen completa...");
+      const image = await htmlToImage.toPng(sheet, {
         cacheBust: true,
         backgroundColor: "#ffffff",
         pixelRatio: 2,
         width: 1600,
         height: Math.max(1000, 760 + store.processes.length * 92)
       });
+      setToast("El archivo se ha generado correctamente.");
+      return image;
+    } catch (error) {
+      console.error("MetaPlan export failed", error);
+      setToast("No se ha podido generar el archivo del MetaPlan.");
+      return null;
     } finally {
       sheet.remove();
     }
@@ -462,7 +473,11 @@ export function App() {
           <div className="editor-toolbar" role="toolbar" aria-label="Herramientas del Metaplan">
             <div className="toolbar-row toolbar-context">
               <label className="project-field">Proyecto<input value={store.project.name} onChange={(event) => store.updateProject({ name: event.target.value })} /><small>Nombra el caso de trabajo como lo presentaría un CEO o un alumno de máster.</small></label>
+              <button title="Abrir archivo editable" onClick={() => openProjectInputRef.current?.click()}>Abrir</button>
+              <input ref={openProjectInputRef} hidden type="file" accept=".json,.docroi.json,application/json" onChange={(event) => importJson(event.target.files?.[0] ?? null)} />
               <button title="Guardar proyecto en este equipo" onClick={saveProject}><Save size={16} /> Guardar</button>
+              <button title="Descargar copia editable" onClick={exportJson}>Guardar como</button>
+              <button title="Abrir copia recuperada" onClick={recoverBertelsmann}>Recuperar Bertelsmann</button>
               <button className="ghost-danger" title="Limpiar lienzo" onClick={clearCanvas}><Trash2 size={16} /> Limpiar lienzo</button>
               <button title="Nuevo lienzo limpio" onClick={clearCanvas}><SquarePlus size={16} /> Nuevo lienzo</button>
               <button title="Vista completa" onClick={() => flow.fitView({ padding: 0.18, duration: 220 })}><Maximize size={16} /> Vista completa</button>
@@ -514,6 +529,7 @@ export function App() {
                     <h2>Metaplan libre</h2>
                     <p>Pulsa <strong>Nueva entidad</strong> y haz clic donde quieras colocarla. Después arrastra desde un puerto para crear relaciones.</p>
                     <button className="dark-btn" onClick={() => setTool("entity")}>Nueva entidad</button>
+                    <button onClick={recoverBertelsmann}>Recuperar Fundación Bertelsmann</button>
                     <button onClick={loadGuidedExample}>Cargar ejemplo complejo</button>
                   </div>
                 )}
@@ -590,7 +606,11 @@ export function App() {
               <div className="bottom-bar canvas-export-actions" aria-label="Salidas del Metaplan">
                 <button onClick={async () => {
                   const image = await createCanvasSheet();
-                  if (image) downloadDataUrl(exportFileName("metaplan", store.project.name, "png"), image);
+                  if (image) {
+                    const fileName = exportFileName("metaplan", store.project.name, "png");
+                    setExportPreview({ title: "MetaPlan · Levantamiento", fileName, dataUrl: image });
+                    await downloadDataUrl(fileName, image);
+                  }
                 }}><Download size={16} /> Descargar imagen</button>
                 <button onClick={() => openPrintableCanvas("pdf")}><Printer size={16} /> Descargar PDF</button>
                 <button onClick={shareCanvasImage}><Share2 size={16} /> Compartir</button>
@@ -627,6 +647,17 @@ export function App() {
         />
       )}
       {toast && <div className="toast-message">{toast}</div>}
+      {exportPreview && (
+        <div className="export-preview" role="dialog" aria-modal="true">
+          <div>
+            <button className="sheet-close" onClick={() => setExportPreview(null)}>Cerrar</button>
+            <h2>{exportPreview.title}</h2>
+            <p>Imagen generada. Si el navegador no descargó automáticamente, usa este botón.</p>
+            <a className="dark-btn" href={exportPreview.dataUrl} download={exportPreview.fileName}>Descargar archivo</a>
+            <img src={exportPreview.dataUrl} alt={exportPreview.title} />
+          </div>
+        </div>
+      )}
     </div>
   );
 }
@@ -1395,15 +1426,25 @@ function downloadFile(name: string, content: string, type: string) {
   const link = document.createElement("a");
   link.href = url;
   link.download = name;
+  document.body.appendChild(link);
   link.click();
+  link.remove();
   URL.revokeObjectURL(url);
 }
 
-function downloadDataUrl(name: string, dataUrl: string) {
+async function downloadDataUrl(name: string, dataUrl: string) {
+  const blob = await (await fetch(dataUrl)).blob();
+  const url = URL.createObjectURL(blob);
   const link = document.createElement("a");
-  link.href = dataUrl;
+  link.href = url;
   link.download = name;
+  document.body.appendChild(link);
   link.click();
+  link.remove();
+  if (name.toLowerCase().endsWith(".png")) {
+    window.open(url, "_blank", "noopener,noreferrer");
+  }
+  window.setTimeout(() => URL.revokeObjectURL(url), 60000);
 }
 
 function formatExportDate(date: Date) {
@@ -1420,6 +1461,69 @@ function exportDateStamp(date = new Date()) {
 
 function exportFileName(kind: "metaplan" | "inventario-procesos" | "mapa-procesos", projectName: string, extension: "png" | "pdf" | "xlsx" | "html") {
   return `doc-roi-${kind}-${safeFileName(projectName)}-${exportDateStamp()}.${extension}`;
+}
+
+function buildMetaPlanSvg(entities: Entity[], processes: Process[]) {
+  const padding = 80;
+  const sizes = entities.map((entity) => ({ width: entity.size?.width ?? 170, height: entity.size?.height ?? 82 }));
+  const minX = Math.min(0, ...entities.map((entity) => entity.position.x)) - padding;
+  const minY = Math.min(0, ...entities.map((entity) => entity.position.y)) - padding;
+  const maxX = Math.max(900, ...entities.map((entity, index) => entity.position.x + sizes[index].width)) + padding;
+  const maxY = Math.max(620, ...entities.map((entity, index) => entity.position.y + sizes[index].height)) + padding;
+  const width = maxX - minX;
+  const height = maxY - minY;
+  const normalize = (point: { x: number; y: number }) => ({ x: point.x - minX, y: point.y - minY });
+  const center = (entity: Entity) => {
+    const size = entity.size ?? { width: 170, height: 82 };
+    return normalize({ x: entity.position.x + size.width / 2, y: entity.position.y + size.height / 2 });
+  };
+  const entityMap = new Map(entities.map((entity) => [entity.id, entity]));
+  const edgeSvg = processes.map((process, index) => {
+    const source = entityMap.get(process.sourceEntityId);
+    const target = entityMap.get(process.targetEntityId);
+    if (!source || !target) return "";
+    const s = center(source);
+    const t = center(target);
+    const dx = t.x - s.x;
+    const dy = t.y - s.y;
+    const length = Math.max(Math.hypot(dx, dy), 1);
+    const normalX = -dy / length;
+    const normalY = dx / length;
+    const offset = (index % 2 === 0 ? 1 : -1) * (42 + (index % 4) * 12);
+    const cx = (s.x + t.x) / 2 + normalX * offset;
+    const cy = (s.y + t.y) / 2 + normalY * offset;
+    const labelX = 0.25 * s.x + 0.5 * cx + 0.25 * t.x;
+    const labelY = 0.25 * s.y + 0.5 * cy + 0.25 * t.y;
+    const markerStart = process.direction === "bidirectional" ? ` marker-start="url(#arrowStart)"` : "";
+    return `<g>
+      <path d="M ${s.x} ${s.y} Q ${cx} ${cy} ${t.x} ${t.y}" fill="none" stroke="#003b5c" stroke-width="3" marker-end="url(#arrowEnd)"${markerStart} />
+      <circle cx="${labelX}" cy="${labelY}" r="17" fill="#f6fbfd" stroke="#003b5c" stroke-width="3" />
+      <text x="${labelX}" y="${labelY + 5}" text-anchor="middle" fill="#0b0f19" font-family="Arial" font-size="14" font-weight="900">${escapeHtml(String(process.visibleId ?? process.displayOrder))}</text>
+    </g>`;
+  }).join("");
+  const entitySvg = entities.map((entity) => {
+    const size = entity.size ?? { width: 170, height: 82 };
+    const point = normalize(entity.position);
+    const rx = entity.shape === "oval" ? Math.min(size.height / 2, 42) : 26;
+    const notes = entity.showDescription === false ? "" : entity.description.split("\n").filter(Boolean).slice(0, 5).map((line, index) => `<text x="${point.x + 18}" y="${point.y + 58 + index * 17}" fill="#283745" font-family="Arial" font-size="12">${escapeHtml(line)}</text>`).join("");
+    return `<g>
+      <rect x="${point.x}" y="${point.y}" width="${size.width}" height="${size.height}" rx="${rx}" fill="#ffffff" stroke="#2f3a42" stroke-width="3" />
+      <text x="${point.x + size.width / 2}" y="${point.y + 34}" text-anchor="middle" fill="#0b0f19" font-family="Arial" font-size="24" font-weight="800">${escapeHtml(entity.name)}</text>
+      ${entity.type ? `<text x="${point.x + size.width / 2}" y="${point.y + 52}" text-anchor="middle" fill="#45616d" font-family="Arial" font-size="12">${escapeHtml(entity.type)}</text>` : ""}
+      ${notes}
+    </g>`;
+  }).join("");
+  return `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 ${width} ${height}" width="${width}" height="${height}" role="img" aria-label="MetaPlan completo">
+    <defs>
+      <marker id="arrowEnd" markerWidth="12" markerHeight="12" refX="10" refY="6" orient="auto" markerUnits="strokeWidth"><path d="M 0 0 L 12 6 L 0 12 z" fill="#003b5c"/></marker>
+      <marker id="arrowStart" markerWidth="12" markerHeight="12" refX="2" refY="6" orient="auto" markerUnits="strokeWidth"><path d="M 12 0 L 0 6 L 12 12 z" fill="#003b5c"/></marker>
+      <pattern id="grid" width="24" height="24" patternUnits="userSpaceOnUse"><path d="M 24 0 L 0 0 0 24" fill="none" stroke="#dbe8ef" stroke-width="1"/></pattern>
+    </defs>
+    <rect width="100%" height="100%" fill="#ffffff"/>
+    <rect width="100%" height="100%" fill="url(#grid)"/>
+    ${edgeSvg}
+    ${entitySvg}
+  </svg>`;
 }
 
 function relationDetailsHtml(processes: Process[], entities: Entity[]) {

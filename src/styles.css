@@ -658,6 +658,17 @@ button.collapse-panel:focus-visible {
   border: 1px solid #d6e0e8;
   box-shadow: 0 18px 48px rgba(7,26,43,.12);
 }
+.export-metaplan-map {
+  width: 100%;
+  border: 1px solid #d6e0e8;
+  box-shadow: 0 18px 48px rgba(7,26,43,.12);
+  background: #fff;
+}
+.export-metaplan-map svg {
+  display: block;
+  width: 100%;
+  height: auto;
+}
 .export-relation-details {
   width: 100%;
   display: grid;
@@ -1078,6 +1089,33 @@ tr.active td { background: #e8f6fb; }
 .process-sheet dt { font-weight: 900; color: #003b5c; }
 .process-sheet dd { margin: 0; white-space: pre-wrap; }
 .sheet-close { float: right; }
+.export-preview {
+  position: fixed;
+  inset: 0;
+  z-index: 90;
+  display: grid;
+  place-items: center;
+  background: rgba(5,10,16,.58);
+  padding: 24px;
+}
+.export-preview > div {
+  width: min(1120px, 96vw);
+  max-height: 92vh;
+  overflow: auto;
+  background: #fff;
+  border-radius: 12px;
+  padding: 18px;
+  box-shadow: 0 28px 90px rgba(0,0,0,.32);
+}
+.export-preview h2 { margin-bottom: 4px; }
+.export-preview p { color: #526879; margin-bottom: 12px; }
+.export-preview img {
+  display: block;
+  width: 100%;
+  height: auto;
+  margin-top: 14px;
+  border: 1px solid #d6e0e8;
+}
 
 .results-section { padding: 36px 28px 56px; border-top: 1px solid var(--color-border); }
 .export-actions details { position: relative; }
