@@ -2,7 +2,7 @@
 import { applyEdgeChanges, applyNodeChanges, Edge, EdgeChange, MarkerType, Node, NodeChange } from "reactflow";
 import { z } from "zod";
 import { createEmptyProject, demoProject, uid } from "./data";
-import { AppStateData, Entity, Process, ProjectInfo, ValueChainStage } from "./types";
+import { AppStateData, Entity, MacroprocessType, Process, ProjectInfo, ValueChainStage } from "./types";
 
 const STORAGE_KEY = "docroi-ingenieria-visual-procesos";
 
@@ -101,6 +101,16 @@ const repairProjectText = <T>(value: T): T => {
   return value;
 };
 
+const stageToMacroprocess = (stage?: ValueChainStage): MacroprocessType | null => stage?.category ?? null;
+
+const normalizeProject = (data: AppStateData): AppStateData => ({
+  ...data,
+  processes: data.processes.map((process) => ({
+    ...process,
+    macroprocessType: process.macroprocessType ?? stageToMacroprocess(data.valueChainStages.find((stage) => stage.id === process.valueChainStageId))
+  }))
+});
+
 export const useAppStore = create<AppStore>((set) => ({
   ...initial,
   past: [],
@@ -109,7 +119,7 @@ export const useAppStore = create<AppStore>((set) => ({
     const raw = localStorage.getItem(STORAGE_KEY);
     if (!raw) return;
     try {
-      const parsed = repairProjectText(projectSchema.parse(JSON.parse(raw)) as AppStateData);
+      const parsed = normalizeProject(repairProjectText(projectSchema.parse(JSON.parse(raw)) as AppStateData));
       localStorage.setItem(STORAGE_KEY, JSON.stringify(parsed));
       set({ ...parsed, past: [], future: [] });
     } catch {
@@ -117,9 +127,9 @@ export const useAppStore = create<AppStore>((set) => ({
     }
   },
   reset: () => commit(set, () => createEmptyProject()),
-  loadDemo: () => commit(set, () => demoProject()),
+  loadDemo: () => commit(set, () => normalizeProject(demoProject())),
   importProject: (data) => {
-    const parsed = projectSchema.parse(data) as AppStateData;
+    const parsed = normalizeProject(projectSchema.parse(data) as AppStateData);
     commit(set, () => parsed);
   },
   updateProject: (patch) => commit(set, (data) => ({ ...data, project: { ...data.project, ...patch } })),
@@ -189,6 +199,7 @@ export const useAppStore = create<AppStore>((set) => ({
         description: "",
         status: "draft",
         valueChainStageId: data.valueChainStages[0]?.id ?? null,
+        macroprocessType: "core",
         lineStyle: "smoothstep",
         tags: []
       };

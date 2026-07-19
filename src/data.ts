@@ -137,9 +137,9 @@ export const academicTabs = [
   {
     title: "Mapa de procesos",
     objective: "Del mapa operativo al mapa de procesos",
-    body: "Cada relación creada en el Metaplan produce automáticamente una tarjeta de proceso con número, nombre, supplier, input, output, customer, descripción, estado, macroproceso y categoría del mapa. Después, los procesos se agrupan en una cadena de valor y finalmente se representan en un mapa general con procesos estratégicos, clave u operativos y de apoyo o soporte.",
-    rule: "El Metaplan descubre los procesos. El inventario los estructura. La cadena de valor los ordena. El mapa de procesos comunica el sistema completo.",
-    concepts: "proceso · inventario · macroproceso · cadena de valor · mapa de procesos",
+    body: "Cada relación creada en el Metaplan produce automáticamente una tarjeta de proceso con número, nombre, supplier, input, output, customer, descripción, estado, macroproceso y categoría del mapa. Después, los procesos se clasifican como estratégicos, clave u operativos, o de apoyo y soporte para representarlos en un mapa general.",
+    rule: "El Metaplan descubre los procesos. El inventario los estructura. La clasificación por macroproceso los ordena. El mapa de procesos comunica el sistema completo.",
+    concepts: "proceso · inventario · macroproceso · mapa de procesos",
     source: "Porter, 1985",
     url: "https://www.hbs.edu/faculty/Pages/item.aspx?num=193",
     references: [

@@ -7,15 +7,21 @@ import * as htmlToImage from "html-to-image";
 import * as XLSX from "xlsx";
 import { academicTabs } from "./data";
 import { applyFlowEdgeChanges, applyFlowNodeChanges, toFlowEdges, toFlowNodes, useAppStore } from "./store";
-import { Entity, Process, ProcessMapCategory } from "./types";
+import { Entity, MacroprocessType, Process, ProcessMapCategory } from "./types";
 
 const logoUrl = "/assets/docroi-logo.jpg";
 const nodeTypes = { entityNode: EntityNode };
 const edgeTypes = { processEdge: ProcessEdge };
-type LabView = "metaplan" | "inventory" | "chain" | "map";
+type LabView = "metaplan" | "inventory" | "map";
 type CanvasTool = "select" | "move" | "entity" | "relation";
 type EntityDialogState = { open: boolean; position: { x: number; y: number }; primary: boolean; nearId?: string };
-type RelationDraft = { sourceId: string; targetId: string; direction: "source-target" | "target-source" | "bidirectional"; name: string; reverseName: string };
+type RelationDraft = { sourceId: string; targetId: string; direction: "source-target" | "target-source" | "bidirectional"; name: string; reverseName: string; macroprocessType: MacroprocessType };
+
+const macroprocessOptions: { value: MacroprocessType; label: string }[] = [
+  { value: "strategic", label: "Procesos estratégicos" },
+  { value: "core", label: "Procesos clave / operativos / negocio" },
+  { value: "support", label: "Procesos de apoyo / soporte" }
+];
 
 export function App() {
   const store = useAppStore();
@@ -204,7 +210,7 @@ export function App() {
   const handleNodeClick = (nodeId: string) => {
     if (connectFrom && connectFrom !== nodeId) {
       setToast("");
-      setRelationDraft({ sourceId: connectFrom, targetId: nodeId, direction: "source-target", name: "", reverseName: "" });
+      setRelationDraft({ sourceId: connectFrom, targetId: nodeId, direction: "source-target", name: "", reverseName: "", macroprocessType: "core" });
       setConnectFrom(null);
       return;
     }
@@ -221,6 +227,7 @@ export function App() {
       const created = useAppStore.getState().processes.at(-1);
       if (created) store.updateProcess(created.id, {
         status: "partial",
+        macroprocessType: relationDraft.macroprocessType,
         direction: relationDraft.direction === "bidirectional" ? "bidirectional" : "unidirectional",
         description: relationDraft.direction === "bidirectional" && relationDraft.reverseName.trim()
           ? `Sentido inverso: ${relationDraft.reverseName.trim()}`
@@ -234,7 +241,7 @@ export function App() {
 
   const draftConnection = (sourceId?: string | null, targetId?: string | null) => {
     if (!sourceId || !targetId || sourceId === targetId) return;
-    setRelationDraft({ sourceId, targetId, direction: "source-target", name: "", reverseName: "" });
+    setRelationDraft({ sourceId, targetId, direction: "source-target", name: "", reverseName: "", macroprocessType: "core" });
     setConnectFrom(null);
     setPendingConnection(null);
     pendingConnectionRef.current = null;
@@ -407,7 +414,6 @@ export function App() {
               <button type="button" onClick={() => goToSection("transition")}>Antes del laboratorio</button>
               <button type="button" onClick={() => goToLabBlock("metaplan")}>Mapa operativo</button>
               <button type="button" onClick={() => goToLabBlock("inventory")}>Inventario de procesos</button>
-              <button type="button" onClick={() => goToLabBlock("chain")}>Cadena de valor</button>
               <button type="button" onClick={() => goToLabBlock("map")}>Mapa de procesos</button>
               <button type="button" onClick={() => goToSection("results-title")}>Resultados y exportación</button>
             </div>
@@ -426,7 +432,7 @@ export function App() {
             </div>
             <h1>Identifica tus procesos clave</h1>
             <strong>Ingeniería Visual de Procesos</strong>
-            <p>Identifica quién participa, cómo se relaciona y qué procesos existen realmente. Construye un Metaplan visual, convierte cada conexión en un proceso gestionable y organiza el resultado dentro de una cadena de valor.</p>
+            <p>Identifica quién participa, cómo se relaciona y qué procesos existen realmente. Construye un Metaplan visual, convierte cada conexión en un proceso gestionable y organiza el resultado dentro de un mapa de procesos.</p>
             <div className="hero-actions">
               <button className="light-btn filled" onClick={() => labRef.current?.scrollIntoView({ behavior: "smooth" })}>Iniciar tratamiento</button>
               <button className="light-btn" onClick={() => formRef.current?.scrollIntoView({ behavior: "smooth" })}>Ver cómo funciona</button>
@@ -438,7 +444,7 @@ export function App() {
             <dl>
               <div><dt>Nivel</dt><dd>BASIC · C-Level / Máster</dd></div>
               <div><dt>Metodología</dt><dd>Metaplan interactivo</dd></div>
-              <div><dt>Resultado</dt><dd>Mapa operativo + inventario + cadena de valor + mapa de procesos</dd></div>
+              <div><dt>Resultado</dt><dd>Mapa operativo + inventario + mapa de procesos</dd></div>
               <div><dt>Duración orientativa</dt><dd>20-40 minutos</dd></div>
             </dl>
           </aside>
@@ -488,12 +494,11 @@ export function App() {
           <div className="lab-tabs progressive-tabs" role="tablist" aria-label="Vistas del laboratorio">
             <button className={labView === "metaplan" ? "active" : ""} onClick={() => setLabView("metaplan")}>1 <span>Mapa operativo</span></button>
             <button disabled={store.processes.length === 0} className={labView === "inventory" ? "active" : ""} onClick={() => setLabView("inventory")}>2 <span>Inventario</span></button>
-            <button disabled={store.processes.length < 2} className={labView === "chain" ? "active" : ""} onClick={() => setLabView("chain")}>3 <span>Cadena de valor</span></button>
-            <button disabled={store.processes.length === 0} className={labView === "map" ? "active" : ""} onClick={() => setLabView("map")}>4 <span>Mapa de procesos</span></button>
+            <button disabled={store.processes.length === 0} className={labView === "map" ? "active" : ""} onClick={() => setLabView("map")}>3 <span>Mapa de procesos</span></button>
 
           </div>
           <div className="module-container" ref={moduleContainerRef}>
-            <h2 ref={moduleTitleRef} tabIndex={-1} className="module-title">{labView === "metaplan" ? "Mapa operativo" : labView === "inventory" ? "Inventario de procesos" : labView === "chain" ? "Cadena de valor" : "Mapa de procesos"}</h2>
+            <h2 ref={moduleTitleRef} tabIndex={-1} className="module-title">{labView === "metaplan" ? "Mapa operativo" : labView === "inventory" ? "Inventario de procesos" : "Mapa de procesos"}</h2>
 
           {labView === "metaplan" && (
             <div ref={exportFrameRef} className={rightPanelOpen ? "free-workspace" : "free-workspace panel-hidden"}>
@@ -596,8 +601,7 @@ export function App() {
           )}
 
           {labView === "inventory" && (store.processes.length > 0 ? <InventoryCards setLabView={setLabView} /> : <LockedView title="Tus relaciones se convertirán aquí en procesos." />)}
-          {labView === "chain" && (store.processes.length >= 2 ? <ValueChain /> : <LockedView title="Agruparás los procesos cuando hayas descubierto una parte suficiente del journey." />)}
-          {labView === "map" && (store.processes.length > 0 ? <ProcessMap mapRef={mapRef} /> : <LockedView title="El mapa ejecutivo se generará después de ordenar la cadena de valor." />)}
+          {labView === "map" && (store.processes.length > 0 ? <ProcessMap mapRef={mapRef} /> : <LockedView title="El mapa ejecutivo se generará después de clasificar las relaciones." />)}
           </div>
         </section>
 
@@ -607,7 +611,7 @@ export function App() {
               <div>
                 <span className="section-chip">Salida final</span>
                 <h2 id="results-title">Tu arquitectura operativa está preparada</h2>
-                <p>{store.entities.length} entidades · {store.processes.length} procesos · {store.valueChainStages.length} macroprocesos · 1 mapa de procesos.</p>
+                <p>{store.entities.length} entidades · {store.processes.length} procesos · 3 tipos de macroproceso · 1 mapa de procesos.</p>
               </div>
               <div className="toolbar export-actions">
                 <button onClick={exportExcel}><FileSpreadsheet size={16} /> Descargar Excel</button>
@@ -880,7 +884,7 @@ function RelationInspector({ process, setLabView }: { process: Process; setLabVi
       <label>Dirección<select value={process.direction} onChange={(event) => store.updateProcess(process.id, { direction: event.target.value as Process["direction"] })}><option value="unidirectional">Un sentido</option><option value="bidirectional">Bidireccional</option></select></label>
       <label>Tipo de línea<select value={process.lineStyle ?? "smoothstep"} onChange={(event) => store.updateProcess(process.id, { lineStyle: event.target.value as Process["lineStyle"] })}><option value="smoothstep">Curva</option><option value="straight">Recta</option><option value="step">Escalonada</option><option value="support">Apoyo discontinua</option></select></label>
       <label>Estado<select value={process.status} onChange={(event) => store.updateProcess(process.id, { status: event.target.value as Process["status"] })}><option value="draft">Pendiente</option><option value="partial">En revisión</option><option value="complete">Revisado</option></select></label>
-      <label>Macroproceso<select value={process.valueChainStageId ?? ""} onChange={(event) => store.updateProcess(process.id, { valueChainStageId: event.target.value || null })}><option value="">Sin clasificar</option>{store.valueChainStages.map((stage) => <option key={stage.id} value={stage.id}>{stage.name}</option>)}</select></label>
+      <label>Tipo de macroproceso<select value={process.macroprocessType ?? ""} onChange={(event) => store.updateProcess(process.id, { macroprocessType: event.target.value ? event.target.value as MacroprocessType : null })}><option value="">Sin clasificar</option>{macroprocessOptions.map((option) => <option key={option.value} value={option.value}>{option.label}</option>)}</select></label>
       <div className="inspector-actions">
         <button onClick={() => store.updateProcess(process.id, { sourceEntityId: process.targetEntityId, targetEntityId: process.sourceEntityId })}>Invertir dirección</button>
         <button onClick={() => setLabView("inventory")}>Ver en inventario</button>
@@ -919,6 +923,7 @@ function RelationDialog({ draft, onChange, onCancel, onSubmit }: { draft: Relati
         <button className={draft.direction === "bidirectional" ? "active" : ""} onClick={() => onChange({ ...draft, direction: "bidirectional" })}>{source} ↔ {target}</button>
       </div>
       {isBidirectional && <p className="muted">Se dibuja una sola línea con flecha en ambos extremos. La leyenda conserva los dos sentidos para que no se dupliquen trazos.</p>}
+      <label>Tipo de macroproceso<select value={draft.macroprocessType} onChange={(event) => onChange({ ...draft, macroprocessType: event.target.value as MacroprocessType })}>{macroprocessOptions.map((option) => <option key={option.value} value={option.value}>{option.label}</option>)}</select></label>
       <div className="dialog-actions"><button onClick={onCancel}>Cancelar</button><button className="dark-btn" onClick={onSubmit}>Crear relación</button></div>
     </div>
   );
@@ -1046,7 +1051,7 @@ function InventoryCards({ setLabView }: { setLabView: (view: LabView) => void })
           <div>
             <button onClick={() => store.selectProcess(process.id)}>Completar</button>
             <button onClick={() => { store.selectProcess(process.id); setLabView("metaplan"); }}>Ver en el mapa</button>
-            <button onClick={() => setLabView("chain")}>Clasificar</button>
+            <button onClick={() => setLabView("map")}>Ver en mapa de procesos</button>
           </div>
         </article>
       ))}
@@ -1112,19 +1117,129 @@ function DraggableCard({ process }: { process: Process }) {
 
 function ProcessMap({ mapRef }: { mapRef: React.RefObject<HTMLDivElement> }) {
   const store = useAppStore();
-  const ready = store.processes.length > 0 && store.valueChainStages.some((stage) => stage.category);
-  if (!ready) {
-    return <div className="locked-view"><h2>Antes de generar el mapa necesitamos completar la cadena de valor.</h2><p>Clasifica al menos un macroproceso y confirma la secuencia principal.</p></div>;
-  }
-  const zones: [ProcessMapCategory, string][] = [["strategic", "Procesos estratégicos"], ["core", "Procesos clave / operativos"], ["support", "Procesos de apoyo / soporte"]];
+  const exportRef = useRef<HTMLDivElement>(null);
+  const [filter, setFilter] = useState<MacroprocessType | "all">("all");
+  const [sheetProcessId, setSheetProcessId] = useState<string | null>(null);
+  const classified = store.processes.filter((process) => process.macroprocessType);
+  const visibleProcesses = classified.filter((process) => filter === "all" || process.macroprocessType === filter);
+  const pendingCount = store.processes.length - classified.length;
+  const selectedIndex = sheetProcessId ? visibleProcesses.findIndex((process) => process.id === sheetProcessId) : -1;
+  const sheetProcess = selectedIndex >= 0 ? visibleProcesses[selectedIndex] : null;
+  const zones = macroprocessOptions;
+  const suppliers = countEntities(store.entities, visibleProcesses, "sourceEntityId");
+  const customers = countEntities(store.entities, visibleProcesses, "targetEntityId");
+  const makeMapImage = async () => {
+    if (!exportRef.current) return null;
+    return htmlToImage.toPng(exportRef.current, {
+      cacheBust: true,
+      backgroundColor: "#ffffff",
+      pixelRatio: 2,
+      filter: (node) => !(node instanceof HTMLElement && node.classList.contains("process-map-export-actions"))
+    });
+  };
+  const downloadMapImage = async () => {
+    const image = await makeMapImage();
+    if (image) downloadDataUrl(`${safeFileName(store.project.name)}-mapa-procesos.png`, image);
+  };
+  const downloadMapPdf = async () => {
+    const image = await makeMapImage();
+    if (!image) return;
+    const printWindow = window.open("", "_blank", "width=1200,height=820");
+    if (!printWindow) {
+      downloadDataUrl(`${safeFileName(store.project.name)}-mapa-procesos.png`, image);
+      return;
+    }
+    printWindow.document.write(`<!doctype html><html><head><title>Mapa de procesos · ${escapeHtml(store.project.name)}</title><style>@page{size:A4 landscape;margin:8mm}body{margin:0;background:#fff}img{display:block;width:100%;height:auto}</style></head><body><img src="${image}" alt="Mapa de procesos DocROI" /></body></html>`);
+    printWindow.document.close();
+    printWindow.focus();
+    printWindow.onload = () => printWindow.print();
+  };
+  const shareMapImage = async () => {
+    const image = await makeMapImage();
+    if (!image) return;
+    const blob = await (await fetch(image)).blob();
+    const file = new File([blob], `${safeFileName(store.project.name)}-mapa-procesos.png`, { type: "image/png" });
+    if (navigator.share && navigator.canShare?.({ files: [file] })) {
+      await navigator.share({ title: store.project.name, text: "Mapa de procesos DocROI", files: [file] });
+      return;
+    }
+    downloadDataUrl(file.name, image);
+  };
+
   return (
-    <div className="process-map" ref={mapRef}>
-      <div className="map-toolbar"><button onClick={store.autoLayout}>Generar mapa de procesos</button></div>
-      <aside className="map-side">Suppliers / Proveedores / Entradas</aside>
-      <div className="map-zones">{zones.map(([category, label]) => <section key={category} className={`map-zone ${category}`}><h3>{label}</h3><div>{store.valueChainStages.filter((stage) => stage.category === category).map((stage) => <button key={stage.id} className="map-stage" onClick={() => { const process = store.processes.find((p) => p.valueChainStageId === stage.id); if (process) store.selectProcess(process.id); }}><strong>{stage.name}</strong><span>{store.processes.filter((p) => p.valueChainStageId === stage.id).length} procesos</span></button>)}</div></section>)}</div>
-      <aside className="map-side">Customers / Clientes / Resultados</aside>
-      {store.selectedProcessId && <ProcessTrace />}
-    </div>
+    <>
+      <div className="process-map-shell" ref={mapRef}>
+        <div className="process-map-export-frame" ref={exportRef}>
+          <header className="process-map-brand">
+            <img src={logoUrl} alt="DocROI" />
+            <strong>{store.project.name || "Mapa de procesos DocROI"}</strong>
+          </header>
+          <div className="process-map">
+            <aside className="map-side">
+              <h3>Suppliers</h3>
+              {suppliers.map((item) => <button key={item.id} onClick={() => setFilter("all")}><strong>{item.name}</strong><span>{item.count} relación(es)</span></button>)}
+            </aside>
+            <main className="map-zones">
+              <div className="process-map-toolbar">
+                <div>
+                  <h3>Mapa de procesos</h3>
+                  {pendingCount > 0 && <p>{pendingCount} relación(es) pendientes de clasificar.</p>}
+                </div>
+                <div className="map-filter">
+                  <button className={filter === "all" ? "active" : ""} onClick={() => setFilter("all")}>Todo</button>
+                  {zones.map((zone) => <button key={zone.value} className={filter === zone.value ? "active" : ""} onClick={() => setFilter(zone.value)}>{zone.label.replace("Procesos ", "")}</button>)}
+                </div>
+              </div>
+              {zones.map((zone) => {
+                const zoneProcesses = visibleProcesses.filter((process) => process.macroprocessType === zone.value);
+                return (
+                  <section key={zone.value} className={`map-zone ${zone.value}`}>
+                    <h3>{zone.label}</h3>
+                    <div>{zoneProcesses.length ? zoneProcesses.map((process) => (
+                      <button key={process.id} className="map-stage" onClick={() => { store.selectProcess(process.id); setSheetProcessId(process.id); }}>
+                        <strong>{process.visibleId ?? process.displayOrder} · {process.name}</strong>
+                        <span>{entityName(store.entities, process.sourceEntityId)} → {entityName(store.entities, process.targetEntityId)}</span>
+                        {process.input && <small>Input: {process.input}</small>}
+                        {process.output && <small>Output: {process.output}</small>}
+                      </button>
+                    )) : <p className="empty-zone">Sin relaciones clasificadas.</p>}</div>
+                  </section>
+                );
+              })}
+            </main>
+            <aside className="map-side">
+              <h3>Customers</h3>
+              {customers.map((item) => <button key={item.id} onClick={() => setFilter("all")}><strong>{item.name}</strong><span>{item.count} resultado(s)</span></button>)}
+            </aside>
+          </div>
+        </div>
+        <div className="bottom-bar process-map-export-actions">
+          <button onClick={downloadMapImage}><Download size={16} /> Descargar imagen</button>
+          <button onClick={downloadMapPdf}><Printer size={16} /> Descargar PDF</button>
+          <button onClick={shareMapImage}><Share2 size={16} /> Compartir</button>
+        </div>
+      </div>
+      {sheetProcess && (
+        <div className="process-sheet" role="dialog" aria-modal="true">
+          <div>
+            <button className="sheet-close" onClick={() => setSheetProcessId(null)}>Cerrar</button>
+            <span className="section-chip">Relación {selectedIndex + 1} de {visibleProcesses.length}</span>
+            <h3>{sheetProcess.visibleId ?? sheetProcess.displayOrder} · {sheetProcess.name}</h3>
+            <p>{entityName(store.entities, sheetProcess.sourceEntityId)} → {entityName(store.entities, sheetProcess.targetEntityId)}</p>
+            <dl>
+              {sheetProcess.input && <><dt>Input</dt><dd>{sheetProcess.input}</dd></>}
+              {sheetProcess.output && <><dt>Output</dt><dd>{sheetProcess.output}</dd></>}
+              {sheetProcess.description && <><dt>Descripción</dt><dd>{sheetProcess.description}</dd></>}
+              <dt>Tipo de macroproceso</dt><dd>{macroprocessLabel(sheetProcess.macroprocessType)}</dd>
+            </dl>
+            <div className="dialog-actions">
+              <button disabled={selectedIndex <= 0} onClick={() => setSheetProcessId(visibleProcesses[selectedIndex - 1]?.id ?? null)}>Anterior</button>
+              <button disabled={selectedIndex >= visibleProcesses.length - 1} onClick={() => setSheetProcessId(visibleProcesses[selectedIndex + 1]?.id ?? null)}>Siguiente</button>
+            </div>
+          </div>
+        </div>
+      )}
+    </>
   );
 }
 
@@ -1205,7 +1320,7 @@ function ModuleVisual({ index }: { index: number }) {
     },
     {
       title: "Del Metaplan al mapa de procesos",
-      items: ["Metaplan", "Inventario", "Cadena de valor", "Mapa de procesos"],
+      items: ["Metaplan", "Inventario", "Macroproceso", "Mapa de procesos"],
       kind: "process-map"
     }
   ][index];
@@ -1291,10 +1406,22 @@ function entityName(entities: Entity[], id: string) {
   return entities.find((entity) => entity.id === id)?.name ?? "Sin entidad";
 }
 
+function macroprocessLabel(type?: MacroprocessType | null) {
+  return macroprocessOptions.find((option) => option.value === type)?.label ?? "Sin clasificar";
+}
+
+function countEntities(entities: Entity[], processes: Process[], field: "sourceEntityId" | "targetEntityId") {
+  const counts = new Map<string, number>();
+  processes.forEach((process) => counts.set(process[field], (counts.get(process[field]) ?? 0) + 1));
+  return [...counts.entries()]
+    .map(([id, count]) => ({ id, name: entityName(entities, id), count }))
+    .sort((a, b) => b.count - a.count || a.name.localeCompare(b.name));
+}
+
 function enrichedProcesses(store: ReturnType<typeof useAppStore.getState>) {
   return store.processes.map((process) => {
     const stage = store.valueChainStages.find((item) => item.id === process.valueChainStageId);
-    return { ...process, supplier: entityName(store.entities, process.sourceEntityId), customer: entityName(store.entities, process.targetEntityId), stage: stage?.name ?? "Sin clasificar", category: stage?.category ?? "core" };
+    return { ...process, supplier: entityName(store.entities, process.sourceEntityId), customer: entityName(store.entities, process.targetEntityId), stage: macroprocessLabel(process.macroprocessType ?? stage?.category), category: process.macroprocessType ?? stage?.category ?? "core" };
   });
 }
 
@@ -1322,6 +1449,10 @@ function downloadDataUrl(name: string, dataUrl: string) {
   link.href = dataUrl;
   link.download = name;
   link.click();
+}
+
+function safeFileName(value: string) {
+  return (value || "docroi-mapa-procesos").normalize("NFD").replace(/[\u0300-\u036f]/g, "").replace(/[^a-zA-Z0-9-]+/g, "-").replace(/-+/g, "-").replace(/^-|-$/g, "").toLowerCase();
 }
 
 function escapeHtml(value: string) {

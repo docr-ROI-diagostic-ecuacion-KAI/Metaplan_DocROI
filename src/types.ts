@@ -2,6 +2,7 @@ export type EntityShape = "rounded-rectangle" | "oval";
 export type ProcessDirection = "unidirectional" | "bidirectional";
 export type ProcessStatus = "draft" | "partial" | "complete";
 export type ProcessMapCategory = "strategic" | "core" | "support";
+export type MacroprocessType = ProcessMapCategory;
 
 export interface ProjectInfo {
   id: string;
@@ -39,6 +40,7 @@ export interface Process {
   description: string;
   status: ProcessStatus;
   valueChainStageId: string | null;
+  macroprocessType?: MacroprocessType | null;
   lineStyle?: "smoothstep" | "straight" | "step" | "support";
   tags: string[];
 }
