@@ -412,12 +412,12 @@ main { max-width: 1220px; margin: 0 auto; background: #fff; }
   z-index: 16;
   box-shadow: 0 14px 34px rgba(7,26,43,.08);
 }
-.toolbar-row { display: flex; align-items: center; gap: 8px; min-width: 0; }
-.toolbar-context { justify-content: space-between; }
+.toolbar-row { display: flex; align-items: center; gap: 10px; min-width: 0; }
+.toolbar-context { justify-content: flex-start; flex-wrap: wrap; row-gap: 10px; }
 .toolbar-tools { overflow-x: auto; padding-top: 6px; border-top: 1px solid #edf2f6; scrollbar-width: thin; }
 .tool-group { display: inline-flex; align-items: center; gap: 4px; padding-right: 10px; margin-right: 2px; border-right: 1px solid #dce6ed; white-space: nowrap; }
 .tool-group:last-child { border-right: 0; }
-.project-field { min-width: 220px; flex: 1 1 360px; }
+.project-field { min-width: min(100%, 320px); flex: 1 1 520px; }
 .project-field input { height: 34px; padding: 6px 9px; font-weight: 600; }
 .project-field small { color: #6b7f8d; font-size: 11px; font-weight: 650; line-height: 1.25; }
 .saved-state { display: inline-flex; align-items: center; gap: 6px; color: #526879; font-size: 12px; font-weight: 700; white-space: nowrap; }

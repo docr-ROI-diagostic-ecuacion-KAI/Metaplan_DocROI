@@ -477,7 +477,6 @@ export function App() {
               <input ref={openProjectInputRef} hidden type="file" accept=".json,.docroi.json,application/json" onChange={(event) => importJson(event.target.files?.[0] ?? null)} />
               <button title="Guardar proyecto en este equipo" onClick={saveProject}><Save size={16} /> Guardar</button>
               <button title="Descargar copia editable" onClick={exportJson}>Guardar como</button>
-              <button title="Abrir copia recuperada" onClick={recoverBertelsmann}>Recuperar Bertelsmann</button>
               <button className="ghost-danger" title="Limpiar lienzo" onClick={clearCanvas}><Trash2 size={16} /> Limpiar lienzo</button>
               <button title="Nuevo lienzo limpio" onClick={clearCanvas}><SquarePlus size={16} /> Nuevo lienzo</button>
               <button title="Vista completa" onClick={() => flow.fitView({ padding: 0.18, duration: 220 })}><Maximize size={16} /> Vista completa</button>
