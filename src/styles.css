@@ -682,13 +682,51 @@ main { max-width: 1220px; margin: 0 auto; background: #fff; }
   box-shadow: 0 28px 80px rgba(7,26,43,.2);
   padding: 18px;
 }
-.entity-dialog, .relation-dialog {
+.entity-dialog {
   position: fixed;
   left: 50%;
   top: 50%;
   transform: translate(-50%, -50%);
   width: min(520px, calc(100% - 40px));
   z-index: 14;
+}
+.relation-dialog {
+  position: absolute;
+  z-index: 12;
+  right: 16px;
+  top: 58px;
+  width: min(430px, calc(100% - 32px));
+  max-height: calc(100% - 92px);
+  overflow-y: auto;
+  padding: 14px;
+  border-radius: 10px;
+}
+.relation-dialog h2 {
+  margin-bottom: 10px;
+  font-size: 18px;
+  line-height: 1.15;
+  letter-spacing: 0;
+}
+.relation-dialog label {
+  gap: 4px;
+  font-size: 12px;
+}
+.relation-dialog input {
+  height: 38px;
+  padding: 8px 10px;
+  font-size: 13px;
+}
+.relation-dialog .example-row,
+.relation-dialog .direction-row,
+.relation-dialog .dialog-actions {
+  margin-top: 8px;
+}
+.relation-dialog .example-row button,
+.relation-dialog .direction-row button,
+.relation-dialog .dialog-actions button {
+  min-height: 32px;
+  padding: 6px 10px;
+  font-size: 12px;
 }
 .example-row, .direction-row, .dialog-actions { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 12px; }
 .example-row button { font-size: 12px; padding: 7px 9px; background: #eef9fd; color: #064967; border-radius: 999px; }

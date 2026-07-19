@@ -512,6 +512,14 @@ export function App() {
                   <Controls position="top-right" className="canvas-controls" />
                   <Panel position="top-left" className="canvas-mode-chip">{tool === "entity" ? "Haz clic para colocar entidad" : "Modo manual"}</Panel>
                 </ReactFlow>
+                {relationDraft && (
+                  <RelationDialog
+                    draft={relationDraft}
+                    onChange={setRelationDraft}
+                    onCancel={() => setRelationDraft(null)}
+                    onSubmit={createRelation}
+                  />
+                )}
               </div>
               {!rightPanelOpen && <button className="reopen-panel" onClick={() => setRightPanelOpen(true)}>Mostrar configuración</button>}
               {rightPanelOpen && <RightLegendPanel selectedEntity={selectedEntity} selectedProcess={selectedProcess} setLabView={setLabView} onClose={() => setRightPanelOpen(false)} />}
@@ -566,14 +574,6 @@ export function App() {
           onType={setEntityType}
           onCancel={() => setEntityDialog((current) => ({ ...current, open: false }))}
           onSubmit={createEntityFromDialog}
-        />
-      )}
-      {relationDraft && (
-        <RelationDialog
-          draft={relationDraft}
-          onChange={setRelationDraft}
-          onCancel={() => setRelationDraft(null)}
-          onSubmit={createRelation}
         />
       )}
       {toast && <div className="toast-message">{toast}</div>}
