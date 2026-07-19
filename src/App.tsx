@@ -528,7 +528,6 @@ export function App() {
                     <h2>Metaplan libre</h2>
                     <p>Pulsa <strong>Nueva entidad</strong> y haz clic donde quieras colocarla. Después arrastra desde un puerto para crear relaciones.</p>
                     <button className="dark-btn" onClick={() => setTool("entity")}>Nueva entidad</button>
-                    <button onClick={recoverBertelsmann}>Recuperar Fundación Bertelsmann</button>
                     <button onClick={loadGuidedExample}>Cargar ejemplo complejo</button>
                   </div>
                 )}
