@@ -29,6 +29,7 @@ export function App() {
   const [relationDraft, setRelationDraft] = useState<RelationDraft | null>(null);
   const [toast, setToast] = useState("");
   const [moreOpen, setMoreOpen] = useState(false);
+  const [navOpen, setNavOpen] = useState(false);
   const [demoGuide, setDemoGuide] = useState(false);
   const [tool, setTool] = useState<CanvasTool>("select");
   const [showGrid, setShowGrid] = useState(true);
@@ -65,6 +66,16 @@ export function App() {
   const selectedEntity = store.entities.find((entity) => entity.id === store.selectedEntityId) ?? null;
   const selectedProcess = store.processes.find((process) => process.id === store.selectedProcessId) ?? null;
   const progress = getProgress(store.entities, store.processes);
+
+  const goToSection = (target: "top" | "formation" | "transition" | "lab" | "results-title") => {
+    setNavOpen(false);
+    if (target === "top") {
+      window.history.replaceState(null, "", window.location.pathname);
+      window.scrollTo({ top: 0, behavior: "smooth" });
+      return;
+    }
+    document.getElementById(target)?.scrollIntoView({ behavior: "smooth", block: "start" });
+  };
 
   useEffect(() => {
     requestAnimationFrame(() => {
@@ -248,16 +259,20 @@ export function App() {
   };
 
   return (
-    <div className="app-shell">
-      <header className="global-header">
-        <img src={logoUrl} alt="DocROI" />
-        <nav>
-          <a href="#formation">Píldoras</a>
-          <a href="#transition">Vitaminas</a>
-          <a href="#lab">Medicinas</a>
-          <a href="#results-title">Recetas</a>
+    <div className="app-shell" id="top">
+      <header className={navOpen ? "global-header nav-open" : "global-header"}>
+        <button className="brand-link" type="button" onClick={() => goToSection("top")} aria-label="Volver al inicio de Ingeniería Visual de Procesos">
+          <img src={logoUrl} alt="DocROI" />
+        </button>
+        <nav aria-label="Navegación principal">
+          <button type="button" onClick={() => goToSection("formation")}>Píldoras</button>
+          <button type="button" onClick={() => goToSection("transition")}>Vitaminas</button>
+          <button type="button" onClick={() => goToSection("lab")}>Medicinas</button>
+          <button type="button" onClick={() => goToSection("results-title")}>Recetas</button>
         </nav>
-        <button aria-label="Menú compacto"><Menu size={24} /></button>
+        <button className="menu-toggle" aria-label={navOpen ? "Cerrar menú" : "Abrir menú"} aria-expanded={navOpen} onClick={() => setNavOpen((value) => !value)}>
+          <Menu size={30} strokeWidth={2.7} />
+        </button>
       </header>
 
       <section className="hero-treatment">
