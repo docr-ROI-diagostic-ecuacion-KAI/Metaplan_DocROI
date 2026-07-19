@@ -970,7 +970,7 @@ function DraggableCard({ process }: { process: Process }) {
   return <button ref={setNodeRef} style={{ transform: CSS.Translate.toString(transform) }} className={isDragging ? "value-card dragging" : "value-card"} onClick={() => store.selectProcess(process.id)} {...listeners} {...attributes}><strong>{process.displayOrder}. {process.name}</strong><span>{entityName(store.entities, process.sourceEntityId)} → {entityName(store.entities, process.targetEntityId)}</span></button>;
 }
 
-function ProcessMap({ mapRef }: { mapRef: React.RefObject<HTMLDivElement | null> }) {
+function ProcessMap({ mapRef }: { mapRef: React.RefObject<HTMLDivElement> }) {
   const store = useAppStore();
   const ready = store.processes.length > 0 && store.valueChainStages.some((stage) => stage.category);
   if (!ready) {
