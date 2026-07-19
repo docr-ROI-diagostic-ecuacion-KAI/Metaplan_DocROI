@@ -515,12 +515,16 @@ main { max-width: 1220px; margin: 0 auto; background: #fff; }
 .canvas-mode-chip { background: #fff; border: 1px solid var(--color-border); border-radius: 999px; padding: 8px 12px; color: #526879; font-size: 13px; font-weight: 800; }
 .canvas-controls {
   top: 12px !important;
-  right: 12px !important;
-  left: auto !important;
+  left: 12px !important;
+  right: auto !important;
   bottom: auto !important;
   box-shadow: 0 12px 28px rgba(7,26,43,.14);
 }
 .canvas-controls button { color: #000; }
+.canvas-mode-chip.react-flow__panel.top.left {
+  top: 12px !important;
+  left: 58px !important;
+}
 .reopen-panel {
   position: absolute;
   top: 14px;

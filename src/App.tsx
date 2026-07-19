@@ -585,7 +585,7 @@ export function App() {
                   fitView
                 >
                   {showGrid && <Background gap={20} size={1} />}
-                  <Controls position="top-right" className="canvas-controls" />
+                  <Controls position="top-left" className="canvas-controls" />
                   <Panel position="top-left" className="canvas-mode-chip">{tool === "entity" ? "Haz clic para colocar entidad" : "Modo manual"}</Panel>
                 </ReactFlow>
                 {relationDraft && (
