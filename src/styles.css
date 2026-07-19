@@ -185,33 +185,40 @@ h3 { font-size: 20px; }
   margin-bottom: 22px;
   overflow: hidden;
 }
-.hero-pills span, .section-chip, .objective-card span {
+.hero-pills span,
+.section-chip,
+.objective-card span {
   width: fit-content;
-  min-width: 148px;
+  max-width: 100%;
   display: inline-flex;
-  justify-content: center;
+  justify-content: flex-start;
+  align-items: center;
+  justify-self: start;
+  align-self: start;
   white-space: nowrap;
   border-radius: 999px;
   padding: 7px 12px;
-  background: var(--color-cyan-100);
-  color: #064967;
+  background: #003b5c;
+  color: #fff;
+  border: 1px solid rgba(216,236,248,.62);
   text-transform: uppercase;
   letter-spacing: .04em;
   font-size: 11px;
   font-weight: 900;
+  box-shadow: 0 8px 18px rgba(0,59,92,.22);
 }
 .hero-pills span:nth-child(3) {
-  flex-basis: 100%;
+  flex-basis: auto;
   margin-top: 10px;
-  margin-left: 18px;
+  margin-left: 0;
   min-width: 124px;
   position: relative;
   z-index: 1;
-  border-radius: 4px;
-  padding: 9px 14px;
-  background: #132334;
-  color: #c9f4ff;
-  box-shadow: -18px 0 0 9px rgba(19,35,52,.78), 520px 0 0 9px rgba(19,35,52,.78);
+  border-radius: 999px;
+  padding: 8px 14px;
+  background: #003b5c;
+  color: #fff;
+  box-shadow: 0 8px 18px rgba(0,59,92,.24);
 }
 .hero-grid p { max-width: 650px; color: #d9e9f3; font-size: 18px; line-height: 1.55; }
 .hero-grid strong { display: block; margin-bottom: 14px; color: #9ee9ff; font-size: 20px; }
