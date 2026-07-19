@@ -77,6 +77,14 @@ export function App() {
     document.getElementById(target)?.scrollIntoView({ behavior: "smooth", block: "start" });
   };
 
+  const goToLabBlock = (view: LabView) => {
+    setLabView(view);
+    setNavOpen(false);
+    requestAnimationFrame(() => {
+      labRef.current?.scrollIntoView({ behavior: "smooth", block: "start" });
+    });
+  };
+
   useEffect(() => {
     requestAnimationFrame(() => {
       moduleContainerRef.current?.scrollTo({ top: 0, behavior: "smooth" });
@@ -261,18 +269,30 @@ export function App() {
   return (
     <div className="app-shell" id="top">
       <header className={navOpen ? "global-header nav-open" : "global-header"}>
-        <button className="brand-link" type="button" onClick={() => goToSection("top")} aria-label="Volver al inicio de Ingeniería Visual de Procesos">
+        <a className="brand-link" href="https://doc-roi-executive.vercel.app/" aria-label="Ir a DocROI Executive">
           <img src={logoUrl} alt="DocROI" />
-        </button>
-        <nav aria-label="Navegación principal">
-          <button type="button" onClick={() => goToSection("formation")}>Píldoras</button>
-          <button type="button" onClick={() => goToSection("transition")}>Vitaminas</button>
-          <button type="button" onClick={() => goToSection("lab")}>Medicinas</button>
-          <button type="button" onClick={() => goToSection("results-title")}>Recetas</button>
+        </a>
+        <nav className="primary-nav" aria-label="Navegación principal">
+          <button type="button" onClick={() => goToSection("formation")}>Consulta</button>
+          <button type="button" onClick={() => goToSection("lab")}>Tratamiento</button>
         </nav>
-        <button className="menu-toggle" aria-label={navOpen ? "Cerrar menú" : "Abrir menú"} aria-expanded={navOpen} onClick={() => setNavOpen((value) => !value)}>
-          <Menu size={30} strokeWidth={2.7} />
-        </button>
+        <div className="header-menu">
+          <button className="menu-toggle" aria-label={navOpen ? "Cerrar menú" : "Abrir menú"} aria-expanded={navOpen} onClick={() => setNavOpen((value) => !value)}>
+            <Menu size={30} strokeWidth={2.7} />
+          </button>
+          {navOpen && (
+            <div className="nav-drawer" role="menu" aria-label="Accesos rápidos">
+              <button type="button" onClick={() => goToSection("top")}>Inicio</button>
+              <button type="button" onClick={() => goToSection("formation")}>Consulta formativa</button>
+              <button type="button" onClick={() => goToSection("transition")}>Antes del laboratorio</button>
+              <button type="button" onClick={() => goToLabBlock("metaplan")}>Mapa operativo</button>
+              <button type="button" onClick={() => goToLabBlock("inventory")}>Inventario de procesos</button>
+              <button type="button" onClick={() => goToLabBlock("chain")}>Cadena de valor</button>
+              <button type="button" onClick={() => goToLabBlock("map")}>Mapa de procesos</button>
+              <button type="button" onClick={() => goToSection("results-title")}>Resultados y exportación</button>
+            </div>
+          )}
+        </div>
       </header>
 
       <section className="hero-treatment">

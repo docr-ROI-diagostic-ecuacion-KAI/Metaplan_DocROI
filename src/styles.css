@@ -65,6 +65,8 @@ h3 { font-size: 20px; }
   width: 150px;
   height: 48px;
   flex: 0 0 auto;
+  display: inline-flex;
+  align-items: center;
   justify-content: flex-start;
   padding: 0;
   border: 0;
@@ -73,14 +75,14 @@ h3 { font-size: 20px; }
 }
 .brand-link:hover { background: transparent; border-color: transparent; }
 .brand-link img { width: 142px; height: 42px; object-fit: contain; object-position: left center; }
-.global-header nav {
+.primary-nav {
   display: flex;
   justify-content: flex-end;
   align-items: center;
   gap: 28px;
   margin-left: auto;
 }
-.global-header nav button {
+.primary-nav button {
   padding: 6px 0;
   border: 0;
   border-radius: 0;
@@ -89,7 +91,11 @@ h3 { font-size: 20px; }
   font-size: 14px;
   font-weight: 900;
 }
-.global-header nav button:hover { background: transparent; color: #fff; }
+.primary-nav button:hover { background: transparent; color: #fff; }
+.header-menu {
+  position: relative;
+  flex: 0 0 auto;
+}
 .menu-toggle {
   width: 44px;
   height: 44px;
@@ -100,6 +106,33 @@ h3 { font-size: 20px; }
   color: rgba(255,255,255,.82);
 }
 .menu-toggle:hover { background: transparent; color: #fff; }
+.nav-drawer {
+  position: absolute;
+  top: 54px;
+  right: 0;
+  width: 300px;
+  display: grid;
+  gap: 8px;
+  padding: 12px;
+  background: #050910;
+  border: 1px solid rgba(119,145,164,.32);
+  box-shadow: 0 24px 58px rgba(0,0,0,.38);
+}
+.nav-drawer button {
+  width: 100%;
+  justify-content: flex-start;
+  padding: 11px 12px;
+  border-radius: 7px;
+  border: 1px solid rgba(255,255,255,.08);
+  background: rgba(255,255,255,.035);
+  color: rgba(255,255,255,.9);
+  text-align: left;
+}
+.nav-drawer button:hover {
+  background: rgba(205,243,255,.12);
+  border-color: rgba(205,243,255,.26);
+  color: #fff;
+}
 
 .hero-treatment {
   position: relative;
@@ -882,30 +915,30 @@ tr.active td { background: #e8f6fb; }
   .global-header { height: 62px; padding: 0 16px; }
   .brand-link { width: 132px; }
   .brand-link img { width: 126px; height: 38px; }
-  .global-header nav {
+  .primary-nav {
+    gap: 18px;
+  }
+  .primary-nav button {
+    font-size: 13px;
+  }
+  .nav-drawer {
     position: absolute;
     top: 62px;
     left: 0;
     right: 0;
-    display: none;
+    width: auto;
     margin: 0;
     padding: 12px 16px 16px;
     background: #050910;
     border-bottom: 1px solid rgba(119,145,164,.32);
     box-shadow: 0 20px 42px rgba(0,0,0,.28);
   }
-  .global-header.nav-open nav { display: grid; gap: 8px; }
-  .global-header nav button {
-    width: 100%;
-    justify-content: flex-start;
-    padding: 12px 10px;
-    border-radius: 7px;
-    border: 1px solid rgba(255,255,255,.08);
-    background: rgba(255,255,255,.03);
-  }
-  .global-header nav button:hover { background: rgba(205,243,255,.12); }
   .hero-grid, .formation, .lab-shell, .results-section { padding-left: 16px; padding-right: 16px; }
   .academic-module { grid-template-columns: 1fr; }
   .objective-card div, .filter-row, .lab-topbar > div:first-child, .lab-tabs, .kanban { grid-template-columns: 1fr; }
   .canvas-wrap { height: 560px; min-height: 560px; }
+}
+
+@media (max-width: 480px) {
+  .primary-nav { display: none; }
 }
